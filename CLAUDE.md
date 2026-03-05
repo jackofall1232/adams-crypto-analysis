@@ -265,9 +265,9 @@ SIGNAL IMAGE REQUIREMENTS
 ====================================================
 Select image based on recommendation:
 
-BUY  -> /assets/images/BUY.png
-HOLD -> /assets/images/HOLD.png
-SELL -> /assets/images/SELL.png
+BUY  -> /assets/images/BUY.jpg
+HOLD -> /assets/images/HOLD.jpg
+SELL -> /assets/images/SELL.jpg
 
 Place the image at the VERY TOP of the output:
 
