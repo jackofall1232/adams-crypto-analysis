@@ -780,11 +780,21 @@ class ADAMCA_Admin {
             default:
                 $effective_model = $model_name ?: 'gpt-4o';
                 if ( 0 === strpos( $effective_model, 'gpt-5' ) ) {
-                    $request_url  = 'https://api.openai.com/v1/responses';
-                    $request_body = wp_json_encode( array(
+                    $request_url      = 'https://api.openai.com/v1/responses';
+                    $combined_prompt  = $system_text . "\n\n" . $test_prompt;
+                    $request_body     = wp_json_encode( array(
                         'model'             => $effective_model,
-                        'instructions'      => $system_text,
-                        'input'             => $test_prompt,
+                        'input'             => array(
+                            array(
+                                'role'    => 'user',
+                                'content' => array(
+                                    array(
+                                        'type' => 'input_text',
+                                        'text' => $combined_prompt,
+                                    ),
+                                ),
+                            ),
+                        ),
                         'max_output_tokens' => 16,
                     ) );
                 } else {
