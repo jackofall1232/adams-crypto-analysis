@@ -293,7 +293,6 @@ PROMPT;
 
         $request_body = wp_json_encode( array(
             'model'             => $model_name,
-            'instructions'      => self::get_system_prompt(),
             'input'             => array(
                 array(
                     'role'    => 'user',
@@ -305,7 +304,6 @@ PROMPT;
                     ),
                 ),
             ),
-            'reasoning'         => array( 'effort' => 'medium' ),
             'max_output_tokens' => 4096,
         ) );
 
