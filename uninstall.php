@@ -18,28 +18,28 @@ $adamca_option_names = array(
     'adamca_cached_coins_list',
 );
 
-foreach ( $adamca_option_names as $option_name ) {
-    delete_option( $option_name );
+foreach ( $adamca_option_names as $adamca_option_name ) {
+    delete_option( $adamca_option_name );
 }
 
 // Delete all analysis transients and meta options via direct DB query.
 global $wpdb;
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-$meta_options = $wpdb->get_col(
+$adamca_meta_options = $wpdb->get_col(
     "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'adamca_analysis_%'"
 );
 
-foreach ( $meta_options as $adamca_meta_option_name ) {
+foreach ( $adamca_meta_options as $adamca_meta_option_name ) {
     delete_option( $adamca_meta_option_name );
 }
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-$transient_options = $wpdb->get_col(
+$adamca_transient_options = $wpdb->get_col(
     "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_adamca_analysis_%' OR option_name LIKE '_transient_timeout_adamca_analysis_%'"
 );
 
-foreach ( $transient_options as $transient_name ) {
+foreach ( $adamca_transient_options as $adamca_transient_name ) {
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-    $wpdb->delete( $wpdb->options, array( 'option_name' => $transient_name ) );
+    $wpdb->delete( $wpdb->options, array( 'option_name' => $adamca_transient_name ) );
 }
