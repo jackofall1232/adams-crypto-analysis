@@ -305,6 +305,13 @@ PROMPT;
                     ),
                 ),
             ),
+            'reasoning'         => array(
+                'effort' => 'medium',
+            ),
+            'text'              => array(
+                'verbosity' => 'high',
+            ),
+            'temperature'       => 0.2,
             'max_output_tokens' => 4096,
         ) );
 
