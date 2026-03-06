@@ -350,8 +350,18 @@ PROMPT;
 
         $response_body = json_decode( $raw_body, true );
 
+        if ( ! is_array( $response_body ) ) {
+            $json_error = function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown JSON decode error';
+            error_log( '[ADAMCA AI] OpenAI Responses API invalid JSON: ' . $json_error );
+            self::log_openai_debug( 'Responses JSON decode error', array(
+                'json_error' => $json_error,
+                'raw_body'   => $raw_body,
+            ) );
+            return new WP_Error( 'adamca_openai_parse_error', __( 'OpenAI returned an unreadable response.', 'adams-crypto-analysis' ) );
+        }
+
         self::log_openai_debug( 'Responses parsed JSON', array(
-            'json_decode_ok'   => is_array( $response_body ),
+            'json_decode_ok'   => true,
             'has_output_text'  => isset( $response_body['output_text'] ),
             'output_text_type' => isset( $response_body['output_text'] ) ? gettype( $response_body['output_text'] ) : 'absent',
             'has_output'       => isset( $response_body['output'] ),
@@ -394,7 +404,16 @@ PROMPT;
         // 1. Prefer the top-level output_text convenience field if present and non-empty.
         if ( ! empty( $response_body['output_text'] ) ) {
             if ( is_array( $response_body['output_text'] ) ) {
-                $joined = trim( implode( "\n", array_filter( $response_body['output_text'], 'is_string' ) ) );
+                $output_text_parts = array();
+
+                foreach ( $response_body['output_text'] as $output_text_item ) {
+                    $normalized = self::extract_openai_text_value( $output_text_item );
+                    if ( '' !== $normalized ) {
+                        $output_text_parts[] = $normalized;
+                    }
+                }
+
+                $joined = trim( implode( "\n", $output_text_parts ) );
                 if ( '' !== $joined ) {
                     return $joined;
                 }
@@ -422,8 +441,11 @@ PROMPT;
 
             // Some output items may carry a text field directly (e.g. type=output_text at item level).
             if ( isset( $output_item['type'] ) && 'output_text' === $output_item['type']
-                && isset( $output_item['text'] ) && is_string( $output_item['text'] ) ) {
-                $text_parts[] = $output_item['text'];
+                && isset( $output_item['text'] ) ) {
+                $normalized_text = self::extract_openai_text_value( $output_item['text'] );
+                if ( '' !== $normalized_text ) {
+                    $text_parts[] = $normalized_text;
+                }
                 continue;
             }
 
@@ -437,18 +459,55 @@ PROMPT;
                 }
 
                 // Accept content blocks with type "output_text" or any block that has a text field.
-                $is_text_type = isset( $content_item['type'] ) && 'output_text' === $content_item['type'];
-                $has_text     = isset( $content_item['text'] ) && is_string( $content_item['text'] );
+                $is_text_type = isset( $content_item['type'] ) && in_array( $content_item['type'], array( 'output_text', 'text' ), true );
+                $has_text     = isset( $content_item['text'] );
 
                 if ( $is_text_type || $has_text ) {
                     if ( $has_text ) {
-                        $text_parts[] = $content_item['text'];
+                        $normalized_text = self::extract_openai_text_value( $content_item['text'] );
+                        if ( '' !== $normalized_text ) {
+                            $text_parts[] = $normalized_text;
+                        }
                     }
                 }
             }
         }
 
         return trim( implode( "\n", $text_parts ) );
+    }
+
+    /**
+     * Normalize OpenAI Responses text payload variants to a plain string.
+     *
+     * @param mixed $value Raw text value from Responses JSON.
+     * @return string
+     */
+    private static function extract_openai_text_value( $value ) {
+        if ( is_string( $value ) ) {
+            return trim( $value );
+        }
+
+        if ( is_array( $value ) ) {
+            if ( isset( $value['value'] ) && is_string( $value['value'] ) ) {
+                return trim( $value['value'] );
+            }
+
+            if ( isset( $value['text'] ) && is_string( $value['text'] ) ) {
+                return trim( $value['text'] );
+            }
+
+            $parts = array();
+            foreach ( $value as $sub_value ) {
+                $normalized = self::extract_openai_text_value( $sub_value );
+                if ( '' !== $normalized ) {
+                    $parts[] = $normalized;
+                }
+            }
+
+            return trim( implode( "\n", $parts ) );
+        }
+
+        return '';
     }
 
     /**
@@ -459,9 +518,9 @@ PROMPT;
      * @return void
      */
     private static function log_openai_debug( $label, $context ) {
-        // Temporary debug logging enabled by default for GPT-5 Responses API troubleshooting.
-        // To disable, add: add_filter( 'adamca_openai_safe_debug_mode', '__return_false' );
-        $enabled = (bool) apply_filters( 'adamca_openai_safe_debug_mode', true );
+        // Safe debug mode is disabled by default because prompts can include large data payloads.
+        // Enable as needed: add_filter( 'adamca_openai_safe_debug_mode', '__return_true' );
+        $enabled = (bool) apply_filters( 'adamca_openai_safe_debug_mode', false );
         if ( ! $enabled ) {
             return;
         }
