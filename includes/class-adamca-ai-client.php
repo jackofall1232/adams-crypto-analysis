@@ -20,8 +20,6 @@ class ADAMCA_AI_Client {
         $prompt_text  = self::build_prompt( $coin_id, $shaped_data );
         $provider     = get_option( 'adamca_ai_provider', 'openai' );
 
-        error_log( '[ADAMCA AI] Generating analysis for ' . $coin_id . ' via ' . $provider );
-
         switch ( $provider ) {
             case 'xai':
                 $raw_response = self::send_to_grok_xai( $prompt_text );
@@ -54,162 +52,132 @@ class ADAMCA_AI_Client {
         $safe_coin_id    = sanitize_key( $coin_id );
         $json_data       = wp_json_encode( $shaped_data );
 
-        $prompt_text = <<<PROMPT
-Analyze this CoinGecko cryptocurrency data (JSON below).
-
-You are a professional cryptocurrency technical analyst specializing in swing trading signals.
-
-You will receive market data from CoinGecko structured into two sections:
-
-1) short_term → contains metadata (timeframe, candle_minutes, lookback_days, bars_per_day) and:
-   - ohlc → 4-HOUR OHLC candles (timeframe = 4h), typically ~30 days of history (~180 candles)
-2) long_term → contains metadata (timeframe, lookback_days) and a 90-day price summary:
-   - weekly_closes_90d (approximately 12-13 evenly spaced price values as plain numbers)
-   - price_90d_start
-   - price_90d_end
-   - price_90d_change_pct
-
-Your task: Generate a complete technical analysis with a BUY, HOLD, or SELL recommendation and output ONLY valid HTML.
-
-====================================================
-DATA PROCESSING RULES
-====================================================
-1. Candle timestamps are full ISO strings (e.g., 2025-12-12T08:00:00.000Z). Treat them as 4-hour candle close times.
-2. Data granularity is 4H candles (240 minutes per candle). Do NOT treat this as daily data.
-3. OHLC data is complete and needs NO interpolation.
-4. Use ALL 4H candles provided for indicator calculations (typically ~180 candles).
-5. Volume data is unavailable - do NOT use volume-based indicators or volume assumptions.
-6. Long-term price data is provided ONLY as weekly samples over 90 days. Use it for directional bias and trend context, NOT for indicator calculations.
-7. All numeric outputs must be precise decimals (e.g., 134.52). No "~" or ranges.
-
-====================================================
-TECHNICAL ANALYSIS REQUIREMENTS
-====================================================
-Calculate and interpret using 4H candles ONLY:
-
-- RSI (14-period): numeric value + interpretation (overbought, oversold, neutral)
-- MACD (12, 26, 9): MACD line, signal line, histogram, crossover state (bullish/bearish)
-- Bollinger Bands (20 SMA +/- 2 SD): position of price inside or outside bands
-- 20-period SMA: trend direction and relationship to price (on 4H candles)
-- 50-period SMA: trend direction and relationship to price (on 4H candles)
-- Market structure: bullish, bearish, or sideways with explanation (based on 4H swing highs/lows)
-- Support & resistance: identify at least two major levels for each side (from 4H swing points)
-- Price action: trend, momentum, candle behavior, volatility (4H context)
-
-Use the 90-day price summary ONLY to:
-- Confirm or contradict short-term trend
-- Describe broader market context (e.g., expansion, drawdown, recovery)
-- Adjust confidence level and tone of the recommendation
-
-IMPORTANT: Because this is 4H data, interpret signals as swing-trading opportunities over the next several days to a few weeks.
-
-====================================================
-DUAL-AUDIENCE REQUIREMENT (NOOBS + ADVANCED)
-====================================================
-This report must serve BOTH beginners and advanced traders:
-
-1) Beginner-friendly interpretation:
-   - Explain what the current structure means in plain language.
-   - Mention trader psychology (capitulation, exhaustion, failed bounce, squeeze risk) when applicable.
-   - Explain what indicator confluence implies (continuation risk vs reversal risk).
-   - Must be 4-6 sentences.
-
-2) Advanced precision:
-   - Provide exact numeric indicator outputs and exact S/R, entry/target/stop, and R:R.
-   - Keep technical bullet lists concise and exact.
-
-Do NOT inflate the report with filler. Narrative must add meaning beyond repeating indicator values.
-
-====================================================
-TRADING SIGNAL REQUIREMENTS
-====================================================
-You MUST provide:
-
-- Recommendation: BUY, HOLD, or SELL (ONLY these three - no variations)
-- Confidence: HIGH, MEDIUM, or LOW
-- Entry Price: a specific numerical price level
-- Target Price (1st): a realistic target based on 4H structure
-- Stop-Loss: a specific value below support (not a range)
-- Risk/Reward Ratio: numeric ratio (e.g., 1:2.5)
-- Reasoning: 4-5 sentences explaining WHY the signal was chosen based on indicator confluence + 4H structure, with brief 90-day context. Reasoning must include:
-  (a) what would invalidate the setup,
-  (b) the main risk (trend continuation vs reversal risk).
-
-====================================================
-HTML OUTPUT STRUCTURE
-====================================================
-Output ONLY valid HTML. No markdown. No code fences. No CSS. No backticks.
-
-Structure:
-
-<div class="analysis-container">
-
-  <h2>Market Story (Plain-English)</h2>
-  <p>4-6 sentences explaining what is happening, why it matters, and how traders may be positioned. Include brief 90-day context.</p>
-
-  <h2>Technical Summary</h2>
-  <p>One compact paragraph (2-4 sentences) summarizing 4H trend, momentum, volatility, and structure.</p>
-
-  <h3>Key Indicators</h3>
-  <ul>
-    <li><strong>RSI (14):</strong> [value] - [interpretation]</li>
-    <li><strong>MACD:</strong> [bullish/bearish + include line, signal, histogram]</li>
-    <li><strong>Bollinger Bands:</strong> [price position]</li>
-    <li><strong>20-period SMA:</strong> [value] - [direction] - price above/below</li>
-    <li><strong>50-period SMA:</strong> [value] - [direction] - price above/below</li>
-    <li><strong>Market Structure:</strong> bullish / bearish / sideways with brief explanation</li>
-  </ul>
-
-  <h3>Support & Resistance</h3>
-  <ul>
-    <li><strong>Primary Support:</strong> [price] - [reason]</li>
-    <li><strong>Secondary Support:</strong> [price] - [reason]</li>
-    <li><strong>Primary Resistance:</strong> [price] - [reason]</li>
-    <li><strong>Secondary Resistance:</strong> [price] - [reason]</li>
-  </ul>
-
-  <h3>Final Trading Signal</h3>
-  <p><strong>Recommendation:</strong> Buy / Hold / Sell</p>
-  <p><strong>Confidence:</strong> HIGH / MEDIUM / LOW</p>
-  <p><strong>Entry Price:</strong> $[value]</p>
-  <p><strong>Target Price (1st):</strong> $[value]</p>
-  <p><strong>Stop-Loss:</strong> $[value]</p>
-  <p><strong>Risk/Reward Ratio:</strong> 1:[value]</p>
-  <p><strong>Reasoning:</strong> 4-5 sentences: confluence + invalidation + main risk + 90-day alignment.</p>
-
-  <h3>JSON Data Export</h3>
-  <pre style="white-space:pre-wrap;font-size:0.85em;background:#0a0f1f;padding:12px;border-radius:8px;color:#0f0;">
-  {insert ONLY valid JSON - no trailing commas - containing:
-   timeframe metadata,
-   indicator outputs (including MACD line/signal/histogram),
-   support/resistance levels,
-   long-term summary values,
-   and final signal.
-   Do NOT include the full raw OHLC array.}
-  </pre>
-</div>
-
-====================================================
-STYLE GUIDELINES
-====================================================
-- No Markdown.
-- No code blocks.
-- No CSS beyond the image tag.
-- Do not invent extra fields.
-- All numeric values must be exact decimals.
-
-====================================================
-GOAL
-====================================================
-Produce a professional-grade, investor-ready technical analysis in clean HTML with a
-justified Buy/Hold/Sell signal based on 4H candles, informed - but not overridden - by
-90-day trend context, with both plain-English interpretation and advanced precision.
-
-Cryptocurrency: {$safe_coin_id}
-
-DATA:
-{$json_data}
-PROMPT;
+        $prompt_text = 'Analyze this CoinGecko cryptocurrency data (JSON below).' . "\n\n"
+            . 'You are a professional cryptocurrency technical analyst specializing in swing trading signals.' . "\n\n"
+            . 'You will receive market data from CoinGecko structured into two sections:' . "\n\n"
+            . '1) short_term → contains metadata (timeframe, candle_minutes, lookback_days, bars_per_day) and:' . "\n"
+            . '   - ohlc → 4-HOUR OHLC candles (timeframe = 4h), typically ~30 days of history (~180 candles)' . "\n"
+            . '2) long_term → contains metadata (timeframe, lookback_days) and a 90-day price summary:' . "\n"
+            . '   - weekly_closes_90d (approximately 12-13 evenly spaced price values as plain numbers)' . "\n"
+            . '   - price_90d_start' . "\n"
+            . '   - price_90d_end' . "\n"
+            . '   - price_90d_change_pct' . "\n\n"
+            . 'Your task: Generate a complete technical analysis with a BUY, HOLD, or SELL recommendation and output ONLY valid HTML.' . "\n\n"
+            . '====================================================' . "\n"
+            . 'DATA PROCESSING RULES' . "\n"
+            . '====================================================' . "\n"
+            . '1. Candle timestamps are full ISO strings (e.g., 2025-12-12T08:00:00.000Z). Treat them as 4-hour candle close times.' . "\n"
+            . '2. Data granularity is 4H candles (240 minutes per candle). Do NOT treat this as daily data.' . "\n"
+            . '3. OHLC data is complete and needs NO interpolation.' . "\n"
+            . '4. Use ALL 4H candles provided for indicator calculations (typically ~180 candles).' . "\n"
+            . '5. Volume data is unavailable - do NOT use volume-based indicators or volume assumptions.' . "\n"
+            . '6. Long-term price data is provided ONLY as weekly samples over 90 days. Use it for directional bias and trend context, NOT for indicator calculations.' . "\n"
+            . '7. All numeric outputs must be precise decimals (e.g., 134.52). No "~" or ranges.' . "\n\n"
+            . '====================================================' . "\n"
+            . 'TECHNICAL ANALYSIS REQUIREMENTS' . "\n"
+            . '====================================================' . "\n"
+            . 'Calculate and interpret using 4H candles ONLY:' . "\n\n"
+            . '- RSI (14-period): numeric value + interpretation (overbought, oversold, neutral)' . "\n"
+            . '- MACD (12, 26, 9): MACD line, signal line, histogram, crossover state (bullish/bearish)' . "\n"
+            . '- Bollinger Bands (20 SMA +/- 2 SD): position of price inside or outside bands' . "\n"
+            . '- 20-period SMA: trend direction and relationship to price (on 4H candles)' . "\n"
+            . '- 50-period SMA: trend direction and relationship to price (on 4H candles)' . "\n"
+            . '- Market structure: bullish, bearish, or sideways with explanation (based on 4H swing highs/lows)' . "\n"
+            . '- Support & resistance: identify at least two major levels for each side (from 4H swing points)' . "\n"
+            . '- Price action: trend, momentum, candle behavior, volatility (4H context)' . "\n\n"
+            . 'Use the 90-day price summary ONLY to:' . "\n"
+            . '- Confirm or contradict short-term trend' . "\n"
+            . '- Describe broader market context (e.g., expansion, drawdown, recovery)' . "\n"
+            . '- Adjust confidence level and tone of the recommendation' . "\n\n"
+            . 'IMPORTANT: Because this is 4H data, interpret signals as swing-trading opportunities over the next several days to a few weeks.' . "\n\n"
+            . '====================================================' . "\n"
+            . 'DUAL-AUDIENCE REQUIREMENT (NOOBS + ADVANCED)' . "\n"
+            . '====================================================' . "\n"
+            . 'This report must serve BOTH beginners and advanced traders:' . "\n\n"
+            . '1) Beginner-friendly interpretation:' . "\n"
+            . '   - Explain what the current structure means in plain language.' . "\n"
+            . '   - Mention trader psychology (capitulation, exhaustion, failed bounce, squeeze risk) when applicable.' . "\n"
+            . '   - Explain what indicator confluence implies (continuation risk vs reversal risk).' . "\n"
+            . '   - Must be 4-6 sentences.' . "\n\n"
+            . '2) Advanced precision:' . "\n"
+            . '   - Provide exact numeric indicator outputs and exact S/R, entry/target/stop, and R:R.' . "\n"
+            . '   - Keep technical bullet lists concise and exact.' . "\n\n"
+            . 'Do NOT inflate the report with filler. Narrative must add meaning beyond repeating indicator values.' . "\n\n"
+            . '====================================================' . "\n"
+            . 'TRADING SIGNAL REQUIREMENTS' . "\n"
+            . '====================================================' . "\n"
+            . 'You MUST provide:' . "\n\n"
+            . '- Recommendation: BUY, HOLD, or SELL (ONLY these three - no variations)' . "\n"
+            . '- Confidence: HIGH, MEDIUM, or LOW' . "\n"
+            . '- Entry Price: a specific numerical price level' . "\n"
+            . '- Target Price (1st): a realistic target based on 4H structure' . "\n"
+            . '- Stop-Loss: a specific value below support (not a range)' . "\n"
+            . '- Risk/Reward Ratio: numeric ratio (e.g., 1:2.5)' . "\n"
+            . '- Reasoning: 4-5 sentences explaining WHY the signal was chosen based on indicator confluence + 4H structure, with brief 90-day context. Reasoning must include:' . "\n"
+            . '  (a) what would invalidate the setup,' . "\n"
+            . '  (b) the main risk (trend continuation vs reversal risk).' . "\n\n"
+            . '====================================================' . "\n"
+            . 'HTML OUTPUT STRUCTURE' . "\n"
+            . '====================================================' . "\n"
+            . 'Output ONLY valid HTML. No markdown. No code fences. No CSS. No backticks.' . "\n\n"
+            . 'Structure:' . "\n\n"
+            . '<div class="analysis-container">' . "\n\n"
+            . '  <h2>Market Story (Plain-English)</h2>' . "\n"
+            . '  <p>4-6 sentences explaining what is happening, why it matters, and how traders may be positioned. Include brief 90-day context.</p>' . "\n\n"
+            . '  <h2>Technical Summary</h2>' . "\n"
+            . '  <p>One compact paragraph (2-4 sentences) summarizing 4H trend, momentum, volatility, and structure.</p>' . "\n\n"
+            . '  <h3>Key Indicators</h3>' . "\n"
+            . '  <ul>' . "\n"
+            . '    <li><strong>RSI (14):</strong> [value] - [interpretation]</li>' . "\n"
+            . '    <li><strong>MACD:</strong> [bullish/bearish + include line, signal, histogram]</li>' . "\n"
+            . '    <li><strong>Bollinger Bands:</strong> [price position]</li>' . "\n"
+            . '    <li><strong>20-period SMA:</strong> [value] - [direction] - price above/below</li>' . "\n"
+            . '    <li><strong>50-period SMA:</strong> [value] - [direction] - price above/below</li>' . "\n"
+            . '    <li><strong>Market Structure:</strong> bullish / bearish / sideways with brief explanation</li>' . "\n"
+            . '  </ul>' . "\n\n"
+            . '  <h3>Support & Resistance</h3>' . "\n"
+            . '  <ul>' . "\n"
+            . '    <li><strong>Primary Support:</strong> [price] - [reason]</li>' . "\n"
+            . '    <li><strong>Secondary Support:</strong> [price] - [reason]</li>' . "\n"
+            . '    <li><strong>Primary Resistance:</strong> [price] - [reason]</li>' . "\n"
+            . '    <li><strong>Secondary Resistance:</strong> [price] - [reason]</li>' . "\n"
+            . '  </ul>' . "\n\n"
+            . '  <h3>Final Trading Signal</h3>' . "\n"
+            . '  <p><strong>Recommendation:</strong> Buy / Hold / Sell</p>' . "\n"
+            . '  <p><strong>Confidence:</strong> HIGH / MEDIUM / LOW</p>' . "\n"
+            . '  <p><strong>Entry Price:</strong> $[value]</p>' . "\n"
+            . '  <p><strong>Target Price (1st):</strong> $[value]</p>' . "\n"
+            . '  <p><strong>Stop-Loss:</strong> $[value]</p>' . "\n"
+            . '  <p><strong>Risk/Reward Ratio:</strong> 1:[value]</p>' . "\n"
+            . '  <p><strong>Reasoning:</strong> 4-5 sentences: confluence + invalidation + main risk + 90-day alignment.</p>' . "\n\n"
+            . '  <h3>JSON Data Export</h3>' . "\n"
+            . '  <pre style="white-space:pre-wrap;font-size:0.85em;background:#0a0f1f;padding:12px;border-radius:8px;color:#0f0;">' . "\n"
+            . '  {insert ONLY valid JSON - no trailing commas - containing:' . "\n"
+            . '   timeframe metadata,' . "\n"
+            . '   indicator outputs (including MACD line/signal/histogram),' . "\n"
+            . '   support/resistance levels,' . "\n"
+            . '   long-term summary values,' . "\n"
+            . '   and final signal.' . "\n"
+            . '   Do NOT include the full raw OHLC array.}' . "\n"
+            . '  </pre>' . "\n"
+            . '</div>' . "\n\n"
+            . '====================================================' . "\n"
+            . 'STYLE GUIDELINES' . "\n"
+            . '====================================================' . "\n"
+            . '- No Markdown.' . "\n"
+            . '- No code blocks.' . "\n"
+            . '- No CSS beyond the image tag.' . "\n"
+            . '- Do not invent extra fields.' . "\n"
+            . '- All numeric values must be exact decimals.' . "\n\n"
+            . '====================================================' . "\n"
+            . 'GOAL' . "\n"
+            . '====================================================' . "\n"
+            . 'Produce a professional-grade, investor-ready technical analysis in clean HTML with a' . "\n"
+            . 'justified Buy/Hold/Sell signal based on 4H candles, informed - but not overridden - by' . "\n"
+            . '90-day trend context, with both plain-English interpretation and advanced precision.' . "\n\n"
+            . 'Cryptocurrency: ' . $safe_coin_id . "\n\n"
+            . 'DATA:' . "\n"
+            . $json_data;
 
         return $prompt_text;
     }
@@ -261,20 +229,17 @@ PROMPT;
         ) );
 
         if ( is_wp_error( $response ) ) {
-            error_log( '[ADAMCA AI] OpenAI request failed: ' . $response->get_error_message() );
             return $response;
         }
 
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
             $error_detail = wp_remote_retrieve_body( $response );
-            error_log( '[ADAMCA AI] OpenAI HTTP ' . $status_code . ': ' . $error_detail );
             return new WP_Error( 'adamca_openai_error', 'OpenAI returned HTTP ' . $status_code );
         }
 
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
         if ( empty( $response_body['choices'][0]['message']['content'] ) ) {
-            error_log( '[ADAMCA AI] OpenAI returned empty content' );
             return new WP_Error( 'adamca_openai_empty', __( 'OpenAI returned an empty response.', 'adams-crypto-analysis' ) );
         }
 
@@ -333,7 +298,6 @@ PROMPT;
         ) );
 
         if ( is_wp_error( $response ) ) {
-            error_log( '[ADAMCA AI] OpenAI Responses API request failed: ' . $response->get_error_message() );
             self::log_openai_debug( 'Responses transport error', array(
                 'error' => $response->get_error_message(),
             ) );
@@ -350,7 +314,6 @@ PROMPT;
 
         if ( 200 !== $status_code ) {
             $error_detail = $raw_body;
-            error_log( '[ADAMCA AI] OpenAI Responses API HTTP ' . $status_code . ': ' . $error_detail );
             return new WP_Error( 'adamca_openai_error', 'OpenAI returned HTTP ' . $status_code );
         }
 
@@ -358,7 +321,6 @@ PROMPT;
 
         if ( ! is_array( $response_body ) ) {
             $json_error = function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown JSON decode error';
-            error_log( '[ADAMCA AI] OpenAI Responses API invalid JSON: ' . $json_error );
             self::log_openai_debug( 'Responses JSON decode error', array(
                 'json_error' => $json_error,
                 'raw_body'   => $raw_body,
@@ -383,7 +345,6 @@ PROMPT;
         ) );
 
         if ( '' === $response_text ) {
-            error_log( '[ADAMCA AI] OpenAI Responses API returned empty — no text found in output_text or output[].content[].text' );
             self::log_openai_debug( 'Responses full response body (empty result)', array(
                 'response_body' => $response_body,
             ) );
@@ -531,8 +492,6 @@ PROMPT;
             return;
         }
 
-        $encoded_context = wp_json_encode( $context );
-        error_log( '[ADAMCA AI][OpenAI Debug] ' . $label . ': ' . $encoded_context );
     }
 
     /**
@@ -569,20 +528,17 @@ PROMPT;
         ) );
 
         if ( is_wp_error( $response ) ) {
-            error_log( '[ADAMCA AI] xAI request failed: ' . $response->get_error_message() );
             return $response;
         }
 
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
             $error_detail = wp_remote_retrieve_body( $response );
-            error_log( '[ADAMCA AI] xAI HTTP ' . $status_code . ': ' . $error_detail );
             return new WP_Error( 'adamca_xai_error', 'xAI returned HTTP ' . $status_code );
         }
 
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
         if ( empty( $response_body['choices'][0]['message']['content'] ) ) {
-            error_log( '[ADAMCA AI] xAI returned empty content' );
             return new WP_Error( 'adamca_xai_empty', __( 'xAI returned an empty response.', 'adams-crypto-analysis' ) );
         }
 
@@ -620,20 +576,17 @@ PROMPT;
         ) );
 
         if ( is_wp_error( $response ) ) {
-            error_log( '[ADAMCA AI] Anthropic request failed: ' . $response->get_error_message() );
             return $response;
         }
 
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
             $error_detail = wp_remote_retrieve_body( $response );
-            error_log( '[ADAMCA AI] Anthropic HTTP ' . $status_code . ': ' . $error_detail );
             return new WP_Error( 'adamca_anthropic_error', 'Anthropic returned HTTP ' . $status_code );
         }
 
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
         if ( empty( $response_body['content'][0]['text'] ) ) {
-            error_log( '[ADAMCA AI] Anthropic returned empty content' );
             return new WP_Error( 'adamca_anthropic_empty', __( 'Anthropic returned an empty response.', 'adams-crypto-analysis' ) );
         }
 
@@ -689,7 +642,6 @@ PROMPT;
             return strtoupper( $matches[1] );
         }
 
-        error_log( '[ADAMCA AI] Could not detect recommendation signal from HTML output' );
         return false;
     }
 }

@@ -93,7 +93,6 @@ class ADAMCA_CoinGecko {
         // Extract prices from market chart.
         $prices_array = isset( $chart_raw['prices'] ) ? $chart_raw['prices'] : array();
         if ( empty( $prices_array ) ) {
-            error_log( '[ADAMCA CoinGecko] Empty prices array in market chart response' );
             return new WP_Error( 'adamca_no_prices', __( 'No price data returned from CoinGecko.', 'adams-crypto-analysis' ) );
         }
 
@@ -165,21 +164,18 @@ class ADAMCA_CoinGecko {
      */
     private static function validate_response( $response, $context ) {
         if ( is_wp_error( $response ) ) {
-            error_log( '[ADAMCA CoinGecko] Request failed for ' . $context . ': ' . $response->get_error_message() );
             return $response;
         }
 
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
             $error_message = 'HTTP ' . $status_code . ' for ' . $context;
-            error_log( '[ADAMCA CoinGecko] ' . $error_message );
             return new WP_Error( 'adamca_coingecko_http', $error_message );
         }
 
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
         if ( ! is_array( $response_body ) ) {
             $error_message = 'Invalid JSON response for ' . $context;
-            error_log( '[ADAMCA CoinGecko] ' . $error_message );
             return new WP_Error( 'adamca_coingecko_json', $error_message );
         }
 

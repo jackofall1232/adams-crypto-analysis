@@ -8,7 +8,7 @@
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 // Delete known options.
-$option_names = array(
+$adamca_option_names = array(
     'adamca_coingecko_api_key',
     'adamca_ai_provider',
     'adamca_ai_api_key',
@@ -18,7 +18,7 @@ $option_names = array(
     'adamca_cached_coins_list',
 );
 
-foreach ( $option_names as $option_name ) {
+foreach ( $adamca_option_names as $option_name ) {
     delete_option( $option_name );
 }
 
@@ -30,8 +30,8 @@ $meta_options = $wpdb->get_col(
     "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'adamca_analysis_%'"
 );
 
-foreach ( $meta_options as $meta_option_name ) {
-    delete_option( $meta_option_name );
+foreach ( $meta_options as $adamca_meta_option_name ) {
+    delete_option( $adamca_meta_option_name );
 }
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery

@@ -20,11 +20,9 @@ class ADAMCA_Cache {
         $cached_html = get_transient( $cache_key );
 
         if ( false !== $cached_html ) {
-            error_log( '[ADAMCA Cache] Hit for ' . $coin_id );
             return $cached_html;
         }
 
-        error_log( '[ADAMCA Cache] Miss for ' . $coin_id );
         return false;
     }
 
@@ -60,7 +58,6 @@ class ADAMCA_Cache {
             update_option( 'adamca_cached_coins_list', $coins_list, false );
         }
 
-        error_log( '[ADAMCA Cache] Stored analysis for ' . $coin_id . ' (TTL: ' . $expiry_seconds . 's)' );
     }
 
     /**
@@ -82,7 +79,6 @@ class ADAMCA_Cache {
         $coins_list = array_values( array_diff( $coins_list, array( $sanitized_id ) ) );
         update_option( 'adamca_cached_coins_list', $coins_list, false );
 
-        error_log( '[ADAMCA Cache] Cleared cache for ' . $coin_id );
     }
 
     /**
@@ -101,8 +97,6 @@ class ADAMCA_Cache {
         }
 
         update_option( 'adamca_cached_coins_list', array(), false );
-        error_log( '[ADAMCA Cache] Cleared all cache (' . $clear_count . ' coins)' );
-
         return $clear_count;
     }
 
