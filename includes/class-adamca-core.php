@@ -137,6 +137,7 @@ class ADAMCA_Core {
         wp_localize_script( 'adamca-frontend', 'ADAMCA', array(
             'apiEndpoint' => esc_url_raw( rest_url( 'adams-crypto/v1/analyze' ) ),
             'top10Coins'  => array_values( $top10_coins ),
+            'pluginUrl'   => esc_url_raw( ADAMS_CRYPTO_ANALYSIS_URL ),
         ) );
     }
 
