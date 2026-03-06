@@ -309,6 +309,14 @@ PROMPT;
             'max_output_tokens' => 4096,
         ) );
 
+        self::log_openai_debug( 'Responses request', array(
+            'endpoint'      => $request_url,
+            'model'         => $model_name,
+            'payload_chars' => mb_strlen( $request_body ),
+            'payload_bytes' => strlen( $request_body ),
+            'payload'       => $request_body,
+        ) );
+
         $response = wp_remote_post( $request_url, array(
             'timeout' => 120,
             'headers' => array(
@@ -320,23 +328,97 @@ PROMPT;
 
         if ( is_wp_error( $response ) ) {
             error_log( '[ADAMCA AI] OpenAI Responses API request failed: ' . $response->get_error_message() );
+            self::log_openai_debug( 'Responses transport error', array(
+                'error' => $response->get_error_message(),
+            ) );
             return $response;
         }
 
         $status_code = wp_remote_retrieve_response_code( $response );
+        $raw_body    = wp_remote_retrieve_body( $response );
+
+        self::log_openai_debug( 'Responses raw response', array(
+            'status_code' => $status_code,
+            'body'        => $raw_body,
+        ) );
+
         if ( 200 !== $status_code ) {
-            $error_detail = wp_remote_retrieve_body( $response );
+            $error_detail = $raw_body;
             error_log( '[ADAMCA AI] OpenAI Responses API HTTP ' . $status_code . ': ' . $error_detail );
             return new WP_Error( 'adamca_openai_error', 'OpenAI returned HTTP ' . $status_code );
         }
 
-        $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-        if ( empty( $response_body['output_text'] ) ) {
+        $response_body = json_decode( $raw_body, true );
+        $response_text = self::extract_openai_responses_text( $response_body );
+
+        if ( '' === $response_text ) {
             error_log( '[ADAMCA AI] OpenAI Responses API returned empty output_text' );
+            self::log_openai_debug( 'Responses parsed empty text', array(
+                'parsed_json' => $response_body,
+            ) );
             return new WP_Error( 'adamca_openai_empty', __( 'OpenAI returned an empty response.', 'adams-crypto-analysis' ) );
         }
 
-        return $response_body['output_text'];
+        return $response_text;
+    }
+
+    /**
+     * Extract assistant text from OpenAI Responses API payload.
+     *
+     * @param array $response_body Decoded JSON response body.
+     * @return string
+     */
+    private static function extract_openai_responses_text( $response_body ) {
+        if ( ! is_array( $response_body ) ) {
+            return '';
+        }
+
+        if ( ! empty( $response_body['output_text'] ) ) {
+            if ( is_array( $response_body['output_text'] ) ) {
+                return trim( implode( "\n", array_filter( $response_body['output_text'], 'is_string' ) ) );
+            }
+
+            if ( is_string( $response_body['output_text'] ) ) {
+                return trim( $response_body['output_text'] );
+            }
+        }
+
+        if ( empty( $response_body['output'] ) || ! is_array( $response_body['output'] ) ) {
+            return '';
+        }
+
+        $text_parts = array();
+
+        foreach ( $response_body['output'] as $output_item ) {
+            if ( empty( $output_item['content'] ) || ! is_array( $output_item['content'] ) ) {
+                continue;
+            }
+
+            foreach ( $output_item['content'] as $content_item ) {
+                if ( isset( $content_item['text'] ) && is_string( $content_item['text'] ) ) {
+                    $text_parts[] = $content_item['text'];
+                }
+            }
+        }
+
+        return trim( implode( "\n", $text_parts ) );
+    }
+
+    /**
+     * Log OpenAI-only debug details when explicitly enabled.
+     *
+     * @param string $label   Log label.
+     * @param array  $context Log context payload.
+     * @return void
+     */
+    private static function log_openai_debug( $label, $context ) {
+        $enabled = (bool) apply_filters( 'adamca_openai_safe_debug_mode', false );
+        if ( ! $enabled ) {
+            return;
+        }
+
+        $encoded_context = wp_json_encode( $context );
+        error_log( '[ADAMCA AI][OpenAI Debug] ' . $label . ': ' . $encoded_context );
     }
 
     /**
