@@ -248,8 +248,7 @@ PROMPT;
                 array( 'role' => 'user',   'content' => $prompt_text ),
             ),
             'max_tokens'  => 4096,
-            'temperature' => 0.3,
-        ) );
+                ) );
 
         $response = wp_remote_post( $request_url, array(
             'timeout' => 120,
