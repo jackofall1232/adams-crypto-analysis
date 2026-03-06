@@ -1,6 +1,6 @@
-=== Adam's Crypto Analysis ===
+=== Adams Crypto Analysis ===
 Contributors: jackofall1232
-Tags: cryptocurrency, bitcoin, crypto trading, technical analysis, AI trading, trading signals
+Tags: cryptocurrency, bitcoin, technical analysis, trading, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4

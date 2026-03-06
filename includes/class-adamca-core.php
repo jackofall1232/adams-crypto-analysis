@@ -231,7 +231,6 @@ class ADAMCA_Core {
         // Fetch from CoinGecko.
         $market_data = ADAMCA_CoinGecko::fetch_analysis_data( $coin_id );
         if ( is_wp_error( $market_data ) ) {
-            error_log( '[ADAMCA] CoinGecko fetch failed for ' . $coin_id . ': ' . $market_data->get_error_message() );
             return new WP_REST_Response( array(
                 'success' => false,
                 'error'   => $market_data->get_error_message(),
@@ -241,7 +240,6 @@ class ADAMCA_Core {
         // Generate AI analysis.
         $html_output = ADAMCA_AI_Client::generate_analysis( $coin_id, $market_data );
         if ( is_wp_error( $html_output ) ) {
-            error_log( '[ADAMCA] AI generation failed for ' . $coin_id . ': ' . $html_output->get_error_message() );
             return new WP_REST_Response( array(
                 'success' => false,
                 'error'   => $html_output->get_error_message(),
