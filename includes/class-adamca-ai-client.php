@@ -247,7 +247,8 @@ PROMPT;
                 array( 'role' => 'system', 'content' => self::get_system_prompt() ),
                 array( 'role' => 'user',   'content' => $prompt_text ),
             ),
-            'max_tokens'  => 4096,
+            'max_tokens'  => 8096,
+            
                 ) );
 
         $response = wp_remote_post( $request_url, array(
@@ -310,8 +311,8 @@ PROMPT;
             'text'              => array(
                 'verbosity' => 'high',
             ),
-            'temperature'       => 0.2,
-            'max_output_tokens' => 4096,
+            
+            'max_output_tokens' => 9096,
         ) );
 
         self::log_openai_debug( 'Responses request', array(
