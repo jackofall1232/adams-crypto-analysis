@@ -54,7 +54,23 @@ class ADAMCA_Core {
         // Enqueue assets now that we know shortcode is used.
         $this->enqueue_frontend_assets();
 
+        $banner_url = esc_url( ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/scbanner.png' );
+        $cg_icon_url = esc_url( ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/CG-icon.png' );
+
         $output_html = '<div id="adamca-app" class="adamca-container">';
+
+        // Branding banner.
+        $output_html .= '<div class="adamca-banner-wrap">';
+        $output_html .= '<img src="' . $banner_url . '" alt="' . esc_attr__( 'Crypto Nerd Analysis', 'adams-crypto-analysis' ) . '" class="adamca-banner">';
+        $output_html .= '</div>';
+
+        // Legal disclaimer.
+        $output_html .= '<div class="adamca-disclaimer">';
+        $output_html .= '<p>' . esc_html__( 'For informational purposes only. Not financial advice. Cryptocurrency markets are highly volatile — always do your own research before making any investment decisions. Analysis may take up to 2 minutes depending on server load.', 'adams-crypto-analysis' ) . '</p>';
+        $output_html .= '</div>';
+
+        $output_html .= '<div class="adamca-inner">';
+
         $output_html .= '<div class="adamca-header">';
         $output_html .= '<h1 class="adamca-title">' . $title_text . '</h1>';
         $output_html .= '<p class="adamca-subtitle">' . $subtitle_text . '</p>';
@@ -77,7 +93,7 @@ class ADAMCA_Core {
 
         $output_html .= '<div id="adamca-loading" class="adamca-loading-spinner" style="display:none;">';
         $output_html .= '<div class="adamca-spinner"></div>';
-        $output_html .= '<p>' . esc_html__( 'Generating analysis... this may take up to 60 seconds.', 'adams-crypto-analysis' ) . '</p>';
+        $output_html .= '<p>' . esc_html__( 'Generating analysis&hellip; this may take up to 2 minutes depending on server load.', 'adams-crypto-analysis' ) . '</p>';
         $output_html .= '</div>';
 
         $output_html .= '<div id="adamca-cache-info" class="adamca-cache-indicator" style="display:none;">';
@@ -88,7 +104,15 @@ class ADAMCA_Core {
         $output_html .= '<div id="adamca-result" class="adamca-result-area"></div>';
         $output_html .= '<div id="adamca-error" class="adamca-error" style="display:none;"></div>';
 
+        // CoinGecko attribution.
+        $output_html .= '<div class="adamca-cg-attribution">';
+        $output_html .= '<img src="' . $cg_icon_url . '" alt="CoinGecko" class="adamca-cg-icon">';
+        $output_html .= '<a href="https://www.coingecko.com" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Data provided by CoinGecko', 'adams-crypto-analysis' ) . '</a>';
         $output_html .= '</div>';
+
+        $output_html .= '</div>'; // .adamca-inner
+
+        $output_html .= '</div>'; // .adamca-container
 
         return $output_html;
     }
