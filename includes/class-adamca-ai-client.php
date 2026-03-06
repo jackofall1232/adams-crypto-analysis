@@ -308,9 +308,19 @@ PROMPT;
         $request_body = wp_json_encode( array(
             'model'             => $model_name,
             'instructions'      => self::get_system_prompt(),
-            'input'             => $prompt_text,
+            'input'             => array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type' => 'input_text',
+                            'text' => $prompt_text,
+                        ),
+                    ),
+                ),
+            ),
+            'reasoning'         => array( 'effort' => 'medium' ),
             'max_output_tokens' => 4096,
-            'temperature'       => 0.3,
         ) );
 
         $response = wp_remote_post( $request_url, array(
@@ -364,11 +374,6 @@ PROMPT;
             'temperature' => 0.3,
             'stream'      => false,
         );
-
-        // Grok 4 requires reasoning_effort=none for fast non-reasoning mode.
-        if ( 0 === strpos( $model_name, 'grok-4' ) ) {
-            $body_array['reasoning_effort'] = 'none';
-        }
 
         $request_body = wp_json_encode( $body_array );
 
