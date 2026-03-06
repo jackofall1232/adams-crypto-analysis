@@ -365,6 +365,9 @@ PROMPT;
     /**
      * Extract assistant text from OpenAI Responses API payload.
      *
+     * Handles both the top-level `output_text` convenience field and the nested
+     * `output[].content[].text` structure that OpenAI may return.
+     *
      * @param array $response_body Decoded JSON response body.
      * @return string
      */
@@ -373,16 +376,24 @@ PROMPT;
             return '';
         }
 
+        // 1. Prefer the top-level output_text convenience field if present and non-empty.
         if ( ! empty( $response_body['output_text'] ) ) {
             if ( is_array( $response_body['output_text'] ) ) {
-                return trim( implode( "\n", array_filter( $response_body['output_text'], 'is_string' ) ) );
+                $joined = trim( implode( "\n", array_filter( $response_body['output_text'], 'is_string' ) ) );
+                if ( '' !== $joined ) {
+                    return $joined;
+                }
             }
 
             if ( is_string( $response_body['output_text'] ) ) {
-                return trim( $response_body['output_text'] );
+                $trimmed = trim( $response_body['output_text'] );
+                if ( '' !== $trimmed ) {
+                    return $trimmed;
+                }
             }
         }
 
+        // 2. Fall back to iterating output[] -> content[] -> text.
         if ( empty( $response_body['output'] ) || ! is_array( $response_body['output'] ) ) {
             return '';
         }
@@ -390,13 +401,34 @@ PROMPT;
         $text_parts = array();
 
         foreach ( $response_body['output'] as $output_item ) {
+            if ( ! is_array( $output_item ) ) {
+                continue;
+            }
+
+            // Some output items may carry a text field directly (e.g. type=output_text at item level).
+            if ( isset( $output_item['type'] ) && 'output_text' === $output_item['type']
+                && isset( $output_item['text'] ) && is_string( $output_item['text'] ) ) {
+                $text_parts[] = $output_item['text'];
+                continue;
+            }
+
             if ( empty( $output_item['content'] ) || ! is_array( $output_item['content'] ) ) {
                 continue;
             }
 
             foreach ( $output_item['content'] as $content_item ) {
-                if ( isset( $content_item['text'] ) && is_string( $content_item['text'] ) ) {
-                    $text_parts[] = $content_item['text'];
+                if ( ! is_array( $content_item ) ) {
+                    continue;
+                }
+
+                // Accept content blocks with type "output_text" or any block that has a text field.
+                $is_text_type = isset( $content_item['type'] ) && 'output_text' === $content_item['type'];
+                $has_text     = isset( $content_item['text'] ) && is_string( $content_item['text'] );
+
+                if ( $is_text_type || $has_text ) {
+                    if ( $has_text ) {
+                        $text_parts[] = $content_item['text'];
+                    }
                 }
             }
         }
