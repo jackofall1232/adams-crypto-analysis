@@ -53,7 +53,6 @@ class ADAMCA_AI_Client {
     public static function build_prompt( $coin_id, $shaped_data ) {
         $safe_coin_id    = sanitize_key( $coin_id );
         $json_data       = wp_json_encode( $shaped_data );
-        $images_base_url = ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/';
 
         $prompt_text = <<<PROMPT
 Analyze this CoinGecko cryptocurrency data (JSON below).
@@ -62,9 +61,10 @@ You are a professional cryptocurrency technical analyst specializing in swing tr
 
 You will receive market data from CoinGecko structured into two sections:
 
-1) short_term.ohlc → 4-HOUR OHLC candles (timeframe = 4h), typically ~30 days of history (~180 candles)
-2) long_term → a 90-day price summary containing:
-   - weekly_closes_90d (approximately 12-13 evenly spaced price points)
+1) short_term → contains metadata (timeframe, candle_minutes, lookback_days, bars_per_day) and:
+   - ohlc → 4-HOUR OHLC candles (timeframe = 4h), typically ~30 days of history (~180 candles)
+2) long_term → contains metadata (timeframe, lookback_days) and a 90-day price summary:
+   - weekly_closes_90d (approximately 12-13 evenly spaced price values as plain numbers)
    - price_90d_start
    - price_90d_end
    - price_90d_change_pct
@@ -136,19 +136,6 @@ You MUST provide:
   (b) the main risk (trend continuation vs reversal risk).
 
 ====================================================
-SIGNAL IMAGE REQUIREMENTS
-====================================================
-Select image based on recommendation:
-
-BUY  -> {$images_base_url}BUY.jpg
-HOLD -> {$images_base_url}HOLD.jpg
-SELL -> {$images_base_url}SELL.jpg
-
-Place the image at the VERY TOP of the output:
-
-<img src="URL" alt="Buy/Hold/Sell" style="max-width:180px;border-radius:12px;margin-bottom:20px;">
-
-====================================================
 HTML OUTPUT STRUCTURE
 ====================================================
 Output ONLY valid HTML. No markdown. No code fences. No CSS. No backticks.
@@ -156,7 +143,6 @@ Output ONLY valid HTML. No markdown. No code fences. No CSS. No backticks.
 Structure:
 
 <div class="analysis-container">
-  <img src="..." alt="..." style="max-width:180px;border-radius:12px;margin-bottom:20px;">
 
   <h2>Market Story (Plain-English)</h2>
   <p>4-6 sentences explaining what is happening, why it matters, and how traders may be positioned. Include brief 90-day context.</p>
@@ -459,20 +445,55 @@ PROMPT;
     }
 
     /**
-     * Strip accidental markdown fencing from AI response.
+     * Strip accidental markdown fencing from AI response and inject signal image.
      *
      * @param string $raw_response Raw response text from AI.
      * @return string Cleaned HTML.
      */
     public static function clean_response( $raw_response ) {
-        $html_output = preg_replace( '/^```html\s*|^```\s*|```\s*$/m', '', trim( $raw_response ) );
+        $html = preg_replace( '/^```html\s*|^```\s*|```\s*$/m', '', trim( $raw_response ) );
 
-        // Fix relative image paths to absolute plugin URLs.
-        $images_url  = ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/';
-        $html_output = str_replace( '/assets/images/BUY.jpg',  $images_url . 'BUY.jpg',  $html_output );
-        $html_output = str_replace( '/assets/images/HOLD.jpg', $images_url . 'HOLD.jpg', $html_output );
-        $html_output = str_replace( '/assets/images/SELL.jpg', $images_url . 'SELL.jpg', $html_output );
+        // Remove any AI-generated <img> tags (we inject our own).
+        $html = preg_replace( '/<img\b[^>]*>/i', '', $html );
 
-        return $html_output;
+        // Detect recommendation and inject the correct signal image.
+        $signal = self::detect_recommendation( $html );
+        if ( $signal ) {
+            $images_url = ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/';
+            $img_tag    = '<img src="' . esc_url( $images_url . $signal . '.jpg' )
+                        . '" alt="' . esc_attr( $signal )
+                        . '" style="max-width:180px;border-radius:12px;margin-bottom:20px;">';
+
+            // Insert after <div class="analysis-container"> opening tag.
+            $html = preg_replace(
+                '/(<div\s+class\s*=\s*["\']analysis-container["\'][^>]*>)/i',
+                '$1' . "\n  " . $img_tag,
+                $html,
+                1
+            );
+        }
+
+        return $html;
+    }
+
+    /**
+     * Detect BUY/HOLD/SELL recommendation from the AI-generated HTML.
+     *
+     * @param string $html The analysis HTML.
+     * @return string|false 'BUY', 'HOLD', or 'SELL', or false if not found.
+     */
+    private static function detect_recommendation( $html ) {
+        // Primary: look for <strong>Recommendation:</strong> pattern.
+        if ( preg_match( '/<strong>\s*Recommendation\s*:?\s*<\/strong>\s*(BUY|HOLD|SELL)/i', $html, $matches ) ) {
+            return strtoupper( $matches[1] );
+        }
+
+        // Fallback: look for "Recommendation:" as plain text.
+        if ( preg_match( '/Recommendation\s*:\s*(BUY|HOLD|SELL)/i', $html, $matches ) ) {
+            return strtoupper( $matches[1] );
+        }
+
+        error_log( '[ADAMCA AI] Could not detect recommendation signal from HTML output' );
+        return false;
     }
 }

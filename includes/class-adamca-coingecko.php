@@ -104,16 +104,33 @@ class ADAMCA_CoinGecko {
             return ( $index % $sample_interval === 0 );
         }, ARRAY_FILTER_USE_BOTH ) );
 
+        // Extract price values only (strip timestamps).
+        $weekly_prices = array_map( function ( $point ) {
+            return $point[1];
+        }, $weekly_samples );
+
         $start_price     = $prices_array[0][1];
         $end_price       = $prices_array[ $total_prices - 1 ][1];
         $change_percent  = round( ( ( $end_price - $start_price ) / $start_price ) * 100, 2 );
 
+        // Ensure last close is included.
+        if ( end( $weekly_prices ) !== $end_price ) {
+            $weekly_prices[] = $end_price;
+        }
+
         $shaped_data = array(
+            'source'     => 'coingecko',
             'short_term' => array(
-                'ohlc' => $ohlc_formatted,
+                'timeframe'      => '4h',
+                'candle_minutes' => 240,
+                'lookback_days'  => 30,
+                'bars_per_day'   => 6,
+                'ohlc'           => $ohlc_formatted,
             ),
             'long_term'  => array(
-                'weekly_closes_90d'    => $weekly_samples,
+                'timeframe'            => '7d_samples',
+                'lookback_days'        => 90,
+                'weekly_closes_90d'    => $weekly_prices,
                 'price_90d_start'      => $start_price,
                 'price_90d_end'        => $end_price,
                 'price_90d_change_pct' => $change_percent,
