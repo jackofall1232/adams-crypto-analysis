@@ -51,8 +51,9 @@ class ADAMCA_AI_Client {
      * @return string The complete prompt text.
      */
     public static function build_prompt( $coin_id, $shaped_data ) {
-        $safe_coin_id = sanitize_key( $coin_id );
-        $json_data    = wp_json_encode( $shaped_data );
+        $safe_coin_id    = sanitize_key( $coin_id );
+        $json_data       = wp_json_encode( $shaped_data );
+        $images_base_url = ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/';
 
         $prompt_text = <<<PROMPT
 Analyze this CoinGecko cryptocurrency data (JSON below).
@@ -139,9 +140,9 @@ SIGNAL IMAGE REQUIREMENTS
 ====================================================
 Select image based on recommendation:
 
-BUY  -> /assets/images/BUY.jpg
-HOLD -> /assets/images/HOLD.jpg
-SELL -> /assets/images/SELL.jpg
+BUY  -> {$images_base_url}BUY.jpg
+HOLD -> {$images_base_url}HOLD.jpg
+SELL -> {$images_base_url}SELL.jpg
 
 Place the image at the VERY TOP of the output:
 
@@ -245,6 +246,12 @@ PROMPT;
     private static function send_to_openai( $prompt_text ) {
         $api_key     = get_option( 'adamca_ai_api_key', '' );
         $model_name  = get_option( 'adamca_ai_model', 'gpt-4o' );
+
+        // GPT-5 models use the Responses API.
+        if ( 0 === strpos( $model_name, 'gpt-5' ) ) {
+            return self::send_to_openai_responses( $prompt_text, $api_key, $model_name );
+        }
+
         $request_url = 'https://api.openai.com/v1/chat/completions';
 
         $request_body = wp_json_encode( array(
@@ -288,6 +295,55 @@ PROMPT;
     }
 
     /**
+     * Send prompt to OpenAI Responses API (GPT-5 models).
+     *
+     * @param string $prompt_text The full user prompt.
+     * @param string $api_key     OpenAI API key.
+     * @param string $model_name  Model name (e.g. gpt-5, gpt-5-mini).
+     * @return string|WP_Error Response text or WP_Error.
+     */
+    private static function send_to_openai_responses( $prompt_text, $api_key, $model_name ) {
+        $request_url = 'https://api.openai.com/v1/responses';
+
+        $request_body = wp_json_encode( array(
+            'model'             => $model_name,
+            'instructions'      => self::get_system_prompt(),
+            'input'             => $prompt_text,
+            'max_output_tokens' => 4096,
+            'temperature'       => 0.3,
+        ) );
+
+        $response = wp_remote_post( $request_url, array(
+            'timeout' => 120,
+            'headers' => array(
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . $api_key,
+            ),
+            'body' => $request_body,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            error_log( '[ADAMCA AI] OpenAI Responses API request failed: ' . $response->get_error_message() );
+            return $response;
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        if ( 200 !== $status_code ) {
+            $error_detail = wp_remote_retrieve_body( $response );
+            error_log( '[ADAMCA AI] OpenAI Responses API HTTP ' . $status_code . ': ' . $error_detail );
+            return new WP_Error( 'adamca_openai_error', 'OpenAI returned HTTP ' . $status_code );
+        }
+
+        $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( empty( $response_body['output_text'] ) ) {
+            error_log( '[ADAMCA AI] OpenAI Responses API returned empty output_text' );
+            return new WP_Error( 'adamca_openai_empty', __( 'OpenAI returned an empty response.', 'adams-crypto-analysis' ) );
+        }
+
+        return $response_body['output_text'];
+    }
+
+    /**
      * Send prompt to xAI / Grok.
      *
      * @param string $prompt_text The full user prompt.
@@ -298,7 +354,7 @@ PROMPT;
         $model_name  = get_option( 'adamca_ai_model', 'grok-3' );
         $request_url = 'https://api.x.ai/v1/chat/completions';
 
-        $request_body = wp_json_encode( array(
+        $body_array = array(
             'model'       => $model_name,
             'messages'    => array(
                 array( 'role' => 'system', 'content' => self::get_system_prompt() ),
@@ -307,7 +363,14 @@ PROMPT;
             'max_tokens'  => 4096,
             'temperature' => 0.3,
             'stream'      => false,
-        ) );
+        );
+
+        // Grok 4 requires reasoning_effort=none for fast non-reasoning mode.
+        if ( 0 === strpos( $model_name, 'grok-4' ) ) {
+            $body_array['reasoning_effort'] = 'none';
+        }
+
+        $request_body = wp_json_encode( $body_array );
 
         $response = wp_remote_post( $request_url, array(
             'timeout' => 120,
@@ -398,6 +461,13 @@ PROMPT;
      */
     public static function clean_response( $raw_response ) {
         $html_output = preg_replace( '/^```html\s*|^```\s*|```\s*$/m', '', trim( $raw_response ) );
+
+        // Fix relative image paths to absolute plugin URLs.
+        $images_url  = ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/';
+        $html_output = str_replace( '/assets/images/BUY.jpg',  $images_url . 'BUY.jpg',  $html_output );
+        $html_output = str_replace( '/assets/images/HOLD.jpg', $images_url . 'HOLD.jpg', $html_output );
+        $html_output = str_replace( '/assets/images/SELL.jpg', $images_url . 'SELL.jpg', $html_output );
+
         return $html_output;
     }
 }

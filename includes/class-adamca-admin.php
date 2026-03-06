@@ -59,7 +59,7 @@ class ADAMCA_Admin {
 
         register_setting( $settings_group, 'adamca_ai_model', array(
             'type'              => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
+            'sanitize_callback' => array( __CLASS__, 'sanitize_model' ),
             'default'           => '',
         ) );
 
@@ -120,10 +120,9 @@ class ADAMCA_Admin {
         add_settings_field(
             'adamca_ai_model',
             __( 'AI Model', 'adams-crypto-analysis' ),
-            array( __CLASS__, 'render_text_field' ),
+            array( __CLASS__, 'render_model_field' ),
             'adams-crypto-analysis',
-            'adamca_ai_section',
-            array( 'option_name' => 'adamca_ai_model', 'description' => __( 'e.g. gpt-4o, grok-3, claude-opus-4-5', 'adams-crypto-analysis' ) )
+            'adamca_ai_section'
         );
 
         // Cache section.
@@ -163,43 +162,230 @@ class ADAMCA_Admin {
 
         $admin_nonce = wp_create_nonce( 'adamca_admin_nonce' );
         ?>
-        <div class="wrap">
+        <style>
+            .adamca-admin-wrap {
+                max-width: 900px;
+                margin: 20px auto;
+                background: linear-gradient(135deg, #0a0f1f 0%, #111827 100%);
+                border-radius: 16px;
+                padding: 0 32px 32px;
+                color: #e2e8f0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+            .adamca-admin-wrap .adamca-banner {
+                width: calc(100% + 64px);
+                margin: 0 -32px 24px;
+                border-radius: 16px 16px 0 0;
+                display: block;
+                max-height: 280px;
+                object-fit: cover;
+            }
+            .adamca-admin-wrap h1 {
+                color: #f7931a;
+                font-size: 28px;
+                margin: 0 0 8px;
+                padding: 0;
+            }
+            .adamca-admin-wrap h2 {
+                color: #f7931a;
+                font-size: 20px;
+                border-bottom: 1px solid #2d3748;
+                padding-bottom: 10px;
+                margin-top: 32px;
+            }
+            .adamca-admin-wrap h3 {
+                color: #3861fb;
+                font-size: 16px;
+                margin-top: 24px;
+            }
+            .adamca-admin-wrap .form-table th {
+                color: #cbd5e1;
+                font-weight: 600;
+                padding: 16px 10px 16px 0;
+                vertical-align: top;
+            }
+            .adamca-admin-wrap .form-table td {
+                padding: 12px 10px;
+            }
+            .adamca-admin-wrap input[type="text"],
+            .adamca-admin-wrap input[type="password"],
+            .adamca-admin-wrap input[type="number"],
+            .adamca-admin-wrap select,
+            .adamca-admin-wrap textarea {
+                background: #1a1f2e;
+                border: 1px solid #2d3748;
+                color: #e2e8f0;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 14px;
+                width: 100%;
+                max-width: 400px;
+                box-sizing: border-box;
+            }
+            .adamca-admin-wrap textarea {
+                max-width: 100%;
+            }
+            .adamca-admin-wrap input:focus,
+            .adamca-admin-wrap select:focus,
+            .adamca-admin-wrap textarea:focus {
+                border-color: #3861fb;
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(56, 97, 251, 0.25);
+            }
+            .adamca-admin-wrap select option {
+                background: #1a1f2e;
+                color: #e2e8f0;
+            }
+            .adamca-admin-wrap .description {
+                color: #94a3b8;
+                font-size: 12px;
+                margin-top: 4px;
+            }
+            .adamca-admin-wrap .submit input[type="submit"],
+            .adamca-admin-wrap .adamca-btn {
+                background: linear-gradient(135deg, #f7931a 0%, #e2820e 100%);
+                color: #fff;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 24px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                transition: all 0.2s;
+            }
+            .adamca-admin-wrap .submit input[type="submit"]:hover,
+            .adamca-admin-wrap .adamca-btn:hover {
+                background: linear-gradient(135deg, #e2820e 0%, #d4760a 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+            }
+            .adamca-admin-wrap .adamca-btn-secondary {
+                background: linear-gradient(135deg, #3861fb 0%, #2d4fd8 100%);
+            }
+            .adamca-admin-wrap .adamca-btn-secondary:hover {
+                background: linear-gradient(135deg, #2d4fd8 0%, #2444c0 100%);
+                box-shadow: 0 4px 12px rgba(56, 97, 251, 0.3);
+            }
+            .adamca-admin-wrap .adamca-btn-danger {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            }
+            .adamca-admin-wrap .adamca-btn-danger:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            }
+            .adamca-admin-wrap .adamca-btn-sm {
+                padding: 5px 14px;
+                font-size: 12px;
+            }
+            .adamca-admin-wrap .adamca-actions {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                flex-wrap: wrap;
+                margin-top: 12px;
+            }
+            .adamca-admin-wrap .adamca-result-msg {
+                color: #34d399;
+                font-weight: 500;
+                font-size: 13px;
+                min-height: 20px;
+            }
+            .adamca-admin-wrap .adamca-divider {
+                border: none;
+                border-top: 1px solid #2d3748;
+                margin: 28px 0;
+            }
+            .adamca-admin-wrap .adamca-cache-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                border-radius: 10px;
+                overflow: hidden;
+                margin-top: 16px;
+                font-size: 13px;
+            }
+            .adamca-admin-wrap .adamca-cache-table thead th {
+                background: #1a1f2e;
+                color: #94a3b8;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 11px;
+                letter-spacing: 0.8px;
+                padding: 12px 14px;
+                text-align: left;
+                border-bottom: 2px solid #3861fb;
+            }
+            .adamca-admin-wrap .adamca-cache-table tbody td {
+                background: #0f1525;
+                padding: 10px 14px;
+                border-bottom: 1px solid #1e293b;
+                color: #e2e8f0;
+            }
+            .adamca-admin-wrap .adamca-cache-table tbody tr:hover td {
+                background: #1a1f2e;
+            }
+            .adamca-admin-wrap .adamca-cache-table .adamca-valid {
+                color: #34d399;
+                font-weight: bold;
+            }
+            .adamca-admin-wrap .adamca-cache-table .adamca-invalid {
+                color: #f87171;
+                font-weight: bold;
+            }
+            .adamca-admin-wrap .adamca-empty-state {
+                color: #64748b;
+                font-style: italic;
+                padding: 20px;
+                text-align: center;
+                background: #0f1525;
+                border-radius: 10px;
+                margin-top: 16px;
+            }
+        </style>
+
+        <div class="adamca-admin-wrap">
+            <img src="<?php echo esc_url( ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/adminbanner.png' ); ?>"
+                 alt="<?php esc_attr_e( 'Adams Crypto Analysis', 'adams-crypto-analysis' ); ?>"
+                 class="adamca-banner">
+
             <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
             <form method="post" action="options.php">
                 <?php
                 settings_fields( 'adamca_settings_group' );
                 do_settings_sections( 'adams-crypto-analysis' );
-                submit_button();
+                submit_button( __( 'Save Settings', 'adams-crypto-analysis' ) );
                 ?>
             </form>
 
-            <hr>
+            <hr class="adamca-divider">
             <h2><?php esc_html_e( 'Test Connections', 'adams-crypto-analysis' ); ?></h2>
-            <p>
-                <button type="button" class="button" id="adamca-test-coingecko" data-nonce="<?php echo esc_attr( $admin_nonce ); ?>">
+            <div class="adamca-actions">
+                <button type="button" class="adamca-btn adamca-btn-secondary" id="adamca-test-coingecko">
                     <?php esc_html_e( 'Test CoinGecko', 'adams-crypto-analysis' ); ?>
                 </button>
-                <button type="button" class="button" id="adamca-test-ai" data-nonce="<?php echo esc_attr( $admin_nonce ); ?>">
+                <button type="button" class="adamca-btn adamca-btn-secondary" id="adamca-test-ai">
                     <?php esc_html_e( 'Test AI Provider', 'adams-crypto-analysis' ); ?>
                 </button>
-                <span id="adamca-test-result"></span>
-            </p>
+                <span id="adamca-test-result" class="adamca-result-msg"></span>
+            </div>
 
-            <hr>
+            <hr class="adamca-divider">
             <h2><?php esc_html_e( 'Cache Management', 'adams-crypto-analysis' ); ?></h2>
-            <p>
-                <button type="button" class="button" id="adamca-clear-all-cache" data-nonce="<?php echo esc_attr( $admin_nonce ); ?>">
+            <div class="adamca-actions">
+                <button type="button" class="adamca-btn adamca-btn-danger" id="adamca-clear-all-cache">
                     <?php esc_html_e( 'Clear All Cache', 'adams-crypto-analysis' ); ?>
                 </button>
-                <span id="adamca-cache-result"></span>
-            </p>
+                <span id="adamca-cache-result" class="adamca-result-msg"></span>
+            </div>
 
             <?php
             $cached_status = ADAMCA_Cache::get_all_cached_status();
             if ( ! empty( $cached_status ) ) :
                 ?>
-                <table class="widefat striped" style="max-width:800px;">
+                <table class="adamca-cache-table">
                     <thead>
                         <tr>
                             <th><?php esc_html_e( 'Coin', 'adams-crypto-analysis' ); ?></th>
@@ -217,9 +403,11 @@ class ADAMCA_Admin {
                                 <td><?php echo esc_html( $status_entry['cache_age_minutes'] ); ?></td>
                                 <td><?php echo esc_html( $status_entry['provider'] ); ?></td>
                                 <td><?php echo esc_html( $status_entry['model'] ); ?></td>
-                                <td><?php echo $status_entry['still_valid'] ? '&#10003;' : '&#10007;'; ?></td>
+                                <td class="<?php echo $status_entry['still_valid'] ? 'adamca-valid' : 'adamca-invalid'; ?>">
+                                    <?php echo $status_entry['still_valid'] ? '&#10003;' : '&#10007;'; ?>
+                                </td>
                                 <td>
-                                    <button type="button" class="button button-small adamca-clear-single"
+                                    <button type="button" class="adamca-btn adamca-btn-danger adamca-btn-sm adamca-clear-single"
                                             data-coin="<?php echo esc_attr( $status_entry['coin_id'] ); ?>"
                                             data-nonce="<?php echo esc_attr( $admin_nonce ); ?>">
                                         <?php esc_html_e( 'Clear', 'adams-crypto-analysis' ); ?>
@@ -230,12 +418,48 @@ class ADAMCA_Admin {
                     </tbody>
                 </table>
             <?php else : ?>
-                <p><em><?php esc_html_e( 'No cached analyses found.', 'adams-crypto-analysis' ); ?></em></p>
+                <div class="adamca-empty-state"><?php esc_html_e( 'No cached analyses found.', 'adams-crypto-analysis' ); ?></div>
             <?php endif; ?>
         </div>
 
         <script>
         (function() {
+            /* --- Model dropdown sync with provider --- */
+            var modelsByProvider = {
+                openai:    ['gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini'],
+                xai:       ['grok-4', 'grok-3'],
+                anthropic: ['claude-opus-4-5', 'claude-sonnet-4-5']
+            };
+            var providerSelect = document.querySelector('select[name="adamca_ai_provider"]');
+            var modelSelect = document.getElementById('adamca-ai-model-select');
+            var savedModel = '<?php echo esc_js( get_option( 'adamca_ai_model', '' ) ); ?>';
+
+            function updateModelOptions() {
+                if (!providerSelect || !modelSelect) return;
+                var provider = providerSelect.value;
+                var models = modelsByProvider[provider] || [];
+                modelSelect.innerHTML = '';
+                var hasSelected = false;
+                models.forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    if (m === savedModel) {
+                        opt.selected = true;
+                        hasSelected = true;
+                    }
+                    modelSelect.appendChild(opt);
+                });
+                if (!hasSelected && models.length > 0) {
+                    modelSelect.options[0].selected = true;
+                }
+            }
+            if (providerSelect) {
+                providerSelect.addEventListener('change', function() { savedModel = ''; updateModelOptions(); });
+            }
+            updateModelOptions();
+
+            /* --- AJAX helpers --- */
             function adminAjax(action, extraData, resultElement) {
                 var formData = new FormData();
                 formData.append('action', action);
@@ -364,6 +588,32 @@ class ADAMCA_Admin {
     }
 
     /**
+     * Render the AI model select field (filtered by provider via JS).
+     */
+    public static function render_model_field() {
+        $current_model    = get_option( 'adamca_ai_model', '' );
+        $current_provider = get_option( 'adamca_ai_provider', 'openai' );
+        $models_by_provider = array(
+            'openai'    => array( 'gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini' ),
+            'xai'       => array( 'grok-4', 'grok-3' ),
+            'anthropic' => array( 'claude-opus-4-5', 'claude-sonnet-4-5' ),
+        );
+        ?>
+        <select name="adamca_ai_model" id="adamca-ai-model-select">
+            <?php foreach ( $models_by_provider as $provider_key => $model_list ) : ?>
+                <?php foreach ( $model_list as $model_value ) : ?>
+                    <option value="<?php echo esc_attr( $model_value ); ?>"
+                            data-provider="<?php echo esc_attr( $provider_key ); ?>"
+                            <?php selected( $current_model, $model_value ); ?>>
+                        <?php echo esc_html( $model_value ); ?>
+                    </option>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+        </select>
+        <?php
+    }
+
+    /**
      * Render a textarea field.
      *
      * @param array $field_args Field arguments with option_name and description.
@@ -390,6 +640,21 @@ class ADAMCA_Admin {
     public static function sanitize_provider( $input_value ) {
         $allowed_values = array( 'openai', 'xai', 'anthropic' );
         return in_array( $input_value, $allowed_values, true ) ? $input_value : 'openai';
+    }
+
+    /**
+     * Sanitize model value against allowed list.
+     *
+     * @param string $input_value Raw model value.
+     * @return string Sanitized model or empty string.
+     */
+    public static function sanitize_model( $input_value ) {
+        $allowed_values = array(
+            'gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini',
+            'grok-4', 'grok-3',
+            'claude-opus-4-5', 'claude-sonnet-4-5',
+        );
+        return in_array( $input_value, $allowed_values, true ) ? $input_value : '';
     }
 
     /**
@@ -475,9 +740,9 @@ class ADAMCA_Admin {
 
         switch ( $provider ) {
             case 'xai':
-                $request_url  = 'https://api.x.ai/v1/chat/completions';
-                $request_body = wp_json_encode( array(
-                    'model'       => $model_name ?: 'grok-3',
+                $effective_model = $model_name ?: 'grok-3';
+                $xai_body = array(
+                    'model'       => $effective_model,
                     'messages'    => array(
                         array( 'role' => 'system', 'content' => $system_text ),
                         array( 'role' => 'user',   'content' => $test_prompt ),
@@ -485,7 +750,12 @@ class ADAMCA_Admin {
                     'max_tokens'  => 10,
                     'temperature' => 0,
                     'stream'      => false,
-                ) );
+                );
+                if ( 0 === strpos( $effective_model, 'grok-4' ) ) {
+                    $xai_body['reasoning_effort'] = 'none';
+                }
+                $request_url  = 'https://api.x.ai/v1/chat/completions';
+                $request_body = wp_json_encode( $xai_body );
                 $headers_arr = array(
                     'Content-Type'  => 'application/json',
                     'Authorization' => 'Bearer ' . $api_key,
@@ -511,16 +781,28 @@ class ADAMCA_Admin {
 
             case 'openai':
             default:
-                $request_url  = 'https://api.openai.com/v1/chat/completions';
-                $request_body = wp_json_encode( array(
-                    'model'       => $model_name ?: 'gpt-4o',
-                    'messages'    => array(
-                        array( 'role' => 'system', 'content' => $system_text ),
-                        array( 'role' => 'user',   'content' => $test_prompt ),
-                    ),
-                    'max_tokens'  => 10,
-                    'temperature' => 0,
-                ) );
+                $effective_model = $model_name ?: 'gpt-4o';
+                if ( 0 === strpos( $effective_model, 'gpt-5' ) ) {
+                    $request_url  = 'https://api.openai.com/v1/responses';
+                    $request_body = wp_json_encode( array(
+                        'model'             => $effective_model,
+                        'instructions'      => $system_text,
+                        'input'             => $test_prompt,
+                        'max_output_tokens' => 10,
+                        'temperature'       => 0,
+                    ) );
+                } else {
+                    $request_url  = 'https://api.openai.com/v1/chat/completions';
+                    $request_body = wp_json_encode( array(
+                        'model'       => $effective_model,
+                        'messages'    => array(
+                            array( 'role' => 'system', 'content' => $system_text ),
+                            array( 'role' => 'user',   'content' => $test_prompt ),
+                        ),
+                        'max_tokens'  => 10,
+                        'temperature' => 0,
+                    ) );
+                }
                 $headers_arr = array(
                     'Content-Type'  => 'application/json',
                     'Authorization' => 'Bearer ' . $api_key,
