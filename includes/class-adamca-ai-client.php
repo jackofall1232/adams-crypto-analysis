@@ -235,7 +235,8 @@ PROMPT;
 
         // GPT-5 models use the Responses API.
         if ( 0 === strpos( $model_name, 'gpt-5' ) ) {
-            return self::send_to_openai_responses( $prompt_text, $api_key, $model_name );
+            $combined_prompt = self::get_system_prompt() . "\n\n" . $prompt_text;
+            return self::send_to_openai_responses( $combined_prompt, $api_key, $model_name );
         }
 
         $request_url = 'https://api.openai.com/v1/chat/completions';
@@ -293,7 +294,6 @@ PROMPT;
 
         $request_body = wp_json_encode( array(
             'model'             => $model_name,
-            'instructions'      => self::get_system_prompt(),
             'input'             => array(
                 array(
                     'role'    => 'user',
@@ -305,7 +305,6 @@ PROMPT;
                     ),
                 ),
             ),
-            'reasoning'         => array( 'effort' => 'medium' ),
             'max_output_tokens' => 4096,
         ) );
 
