@@ -427,7 +427,7 @@ class ADAMCA_Admin {
             /* --- Model dropdown sync with provider --- */
             var modelsByProvider = {
                 openai:    ['gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini'],
-                xai:       ['grok-4', 'grok-3'],
+                xai:       ['grok-4-fast-non-reasoning', 'grok-4', 'grok-3'],
                 anthropic: ['claude-opus-4-5', 'claude-sonnet-4-5']
             };
             var providerSelect = document.querySelector('select[name="adamca_ai_provider"]');
@@ -595,7 +595,7 @@ class ADAMCA_Admin {
         $current_provider = get_option( 'adamca_ai_provider', 'openai' );
         $models_by_provider = array(
             'openai'    => array( 'gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini' ),
-            'xai'       => array( 'grok-4', 'grok-3' ),
+            'xai'       => array( 'grok-4-fast-non-reasoning', 'grok-4', 'grok-3' ),
             'anthropic' => array( 'claude-opus-4-5', 'claude-sonnet-4-5' ),
         );
         ?>
@@ -651,7 +651,7 @@ class ADAMCA_Admin {
     public static function sanitize_model( $input_value ) {
         $allowed_values = array(
             'gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini',
-            'grok-4', 'grok-3',
+            'grok-4-fast-non-reasoning', 'grok-4', 'grok-3',
             'claude-opus-4-5', 'claude-sonnet-4-5',
         );
         return in_array( $input_value, $allowed_values, true ) ? $input_value : '';
@@ -751,9 +751,6 @@ class ADAMCA_Admin {
                     'temperature' => 0,
                     'stream'      => false,
                 );
-                if ( 0 === strpos( $effective_model, 'grok-4' ) ) {
-                    $xai_body['reasoning_effort'] = 'none';
-                }
                 $request_url  = 'https://api.x.ai/v1/chat/completions';
                 $request_body = wp_json_encode( $xai_body );
                 $headers_arr = array(
@@ -788,8 +785,7 @@ class ADAMCA_Admin {
                         'model'             => $effective_model,
                         'instructions'      => $system_text,
                         'input'             => $test_prompt,
-                        'max_output_tokens' => 10,
-                        'temperature'       => 0,
+                        'max_output_tokens' => 16,
                     ) );
                 } else {
                     $request_url  = 'https://api.openai.com/v1/chat/completions';
