@@ -252,7 +252,7 @@ PROMPT;
                 ) );
 
         $response = wp_remote_post( $request_url, array(
-            'timeout' => 120,
+            'timeout' => 140,
             'headers' => array(
                 'Content-Type'  => 'application/json',
                 'Authorization' => 'Bearer ' . $api_key,
@@ -306,7 +306,7 @@ PROMPT;
                 ),
             ),
             'reasoning'         => array(
-                'effort' => 'medium',
+                'effort' => 'low',
             ),
             'text'              => array(
                 'verbosity' => 'high',
