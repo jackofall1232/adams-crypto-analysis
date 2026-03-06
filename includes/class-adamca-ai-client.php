@@ -349,12 +349,27 @@ PROMPT;
         }
 
         $response_body = json_decode( $raw_body, true );
+
+        self::log_openai_debug( 'Responses parsed JSON', array(
+            'json_decode_ok'   => is_array( $response_body ),
+            'has_output_text'  => isset( $response_body['output_text'] ),
+            'output_text_type' => isset( $response_body['output_text'] ) ? gettype( $response_body['output_text'] ) : 'absent',
+            'has_output'       => isset( $response_body['output'] ),
+            'output_count'     => isset( $response_body['output'] ) && is_array( $response_body['output'] ) ? count( $response_body['output'] ) : 0,
+            'top_level_keys'   => is_array( $response_body ) ? array_keys( $response_body ) : array(),
+        ) );
+
         $response_text = self::extract_openai_responses_text( $response_body );
 
+        self::log_openai_debug( 'Responses extraction result', array(
+            'parsed_text_length' => mb_strlen( $response_text ),
+            'parsed_text_empty'  => '' === $response_text,
+        ) );
+
         if ( '' === $response_text ) {
-            error_log( '[ADAMCA AI] OpenAI Responses API returned empty output_text' );
-            self::log_openai_debug( 'Responses parsed empty text', array(
-                'parsed_json' => $response_body,
+            error_log( '[ADAMCA AI] OpenAI Responses API returned empty — no text found in output_text or output[].content[].text' );
+            self::log_openai_debug( 'Responses full response body (empty result)', array(
+                'response_body' => $response_body,
             ) );
             return new WP_Error( 'adamca_openai_empty', __( 'OpenAI returned an empty response.', 'adams-crypto-analysis' ) );
         }
@@ -444,7 +459,9 @@ PROMPT;
      * @return void
      */
     private static function log_openai_debug( $label, $context ) {
-        $enabled = (bool) apply_filters( 'adamca_openai_safe_debug_mode', false );
+        // Temporary debug logging enabled by default for GPT-5 Responses API troubleshooting.
+        // To disable, add: add_filter( 'adamca_openai_safe_debug_mode', '__return_false' );
+        $enabled = (bool) apply_filters( 'adamca_openai_safe_debug_mode', true );
         if ( ! $enabled ) {
             return;
         }
