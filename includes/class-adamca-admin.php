@@ -50,6 +50,12 @@ class ADAMCA_Admin {
             'ajaxUrl'    => esc_url_raw( admin_url( 'admin-ajax.php' ) ),
             'nonce'      => wp_create_nonce( 'adamca_admin_nonce' ),
             'savedModel' => get_option( 'adamca_ai_model', '' ),
+            'i18n'       => array(
+                'working'       => __( 'Working...', 'adams-crypto-analysis' ),
+                'success'       => __( 'Success!', 'adams-crypto-analysis' ),
+                'errorOccurred' => __( 'Error occurred.', 'adams-crypto-analysis' ),
+                'requestFailed' => __( 'Request failed: ', 'adams-crypto-analysis' ),
+            ),
         ) );
     }
 
@@ -201,6 +207,12 @@ class ADAMCA_Admin {
 
             <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
+            <div class="adamca-how-to-use" style="background:#fff;border:1px solid #ccd0d4;border-left:4px solid #2271b1;padding:12px 16px;margin:16px 0;">
+                <h3 style="margin-top:0;"><?php esc_html_e( 'How to Use', 'adams-crypto-analysis' ); ?></h3>
+                <p><?php esc_html_e( 'Use the following shortcode to display the crypto analysis tool on any post, page, or shortcode block:', 'adams-crypto-analysis' ); ?></p>
+                <p><code>[adamca_crypto_analysis]</code></p>
+            </div>
+
             <form method="post" action="options.php">
                 <?php
                 settings_fields( 'adamca_settings_group' );
@@ -252,8 +264,8 @@ class ADAMCA_Admin {
                                 <td><?php echo esc_html( $status_entry['cache_age_minutes'] ); ?></td>
                                 <td><?php echo esc_html( $status_entry['provider'] ); ?></td>
                                 <td><?php echo esc_html( $status_entry['model'] ); ?></td>
-                                <td class="<?php echo $status_entry['still_valid'] ? 'adamca-valid' : 'adamca-invalid'; ?>">
-                                    <?php echo $status_entry['still_valid'] ? '&#10003;' : '&#10007;'; ?>
+                                <td class="<?php echo esc_attr( $status_entry['still_valid'] ? 'adamca-valid' : 'adamca-invalid' ); ?>">
+                                    <?php echo esc_html( $status_entry['still_valid'] ? '✓' : '✗' ); ?>
                                 </td>
                                 <td>
                                     <button type="button" class="adamca-btn adamca-btn-danger adamca-btn-sm adamca-clear-single"

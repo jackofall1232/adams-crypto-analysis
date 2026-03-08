@@ -38,6 +38,7 @@ require_once ADAMS_CRYPTO_ANALYSIS_PATH . 'includes/class-adamca-core.php';
  * Initialize the plugin on plugins_loaded.
  */
 function adamca_init_plugin() {
+    load_plugin_textdomain( 'adams-crypto-analysis', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     new ADAMCA_Core();
 }
 add_action( 'plugins_loaded', 'adamca_init_plugin' );

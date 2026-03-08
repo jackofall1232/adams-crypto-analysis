@@ -78,7 +78,7 @@
             return;
         }
 
-        coinSelect.innerHTML = '<option value="">Loading...</option>';
+        coinSelect.innerHTML = '<option value="">' + ADAMCA.i18n.loading + '</option>';
 
         fetch(requestUrl)
             .then(function (fetchResponse) { return fetchResponse.json(); })
@@ -99,13 +99,13 @@
                 populateCoinSelect();
             })
             .catch(function (fetchError) {
-                coinSelect.innerHTML = '<option value="">Failed to load coins</option>';
+                coinSelect.innerHTML = '<option value="">' + ADAMCA.i18n.failedToLoad + '</option>';
                 console.error('[ADAMCA] Coin list fetch error:', fetchError);
             });
     }
 
     function populateCoinSelect() {
-        coinSelect.innerHTML = '<option value="">Select a coin...</option>';
+        coinSelect.innerHTML = '<option value="">' + ADAMCA.i18n.selectCoin + '</option>';
 
         coinListData.forEach(function (coinEntry) {
             var optionElement = document.createElement('option');
@@ -192,7 +192,7 @@
         }
 
         if (!selectedCoinId) {
-            showError('Please select or enter a coin ID.');
+            showError(ADAMCA.i18n.pleaseSelect);
             return;
         }
 
@@ -228,7 +228,7 @@
                 resultArea.innerHTML = responseData.html;
                 showCacheIndicator(responseData.cached, responseData.cache_age_minutes);
             } else {
-                showError(responseData.error || 'Analysis failed. Please try again.');
+                showError(responseData.error || ADAMCA.i18n.analysisFailed);
             }
         })
         .catch(function (fetchError) {
@@ -237,9 +237,9 @@
             analyzeButton.disabled = false;
 
             if (fetchError.name === 'AbortError') {
-                showError('Request timed out after 120 seconds. The AI provider may be overloaded. Please try again.');
+                showError(ADAMCA.i18n.timedOut);
             } else {
-                showError('Network error: ' + fetchError.message);
+                showError(ADAMCA.i18n.networkError + fetchError.message);
             }
         });
     }
@@ -250,10 +250,10 @@
 
         if (isCached) {
             cacheDot.className = 'adamca-cache-dot cached';
-            cacheText.textContent = 'Cached analysis (' + ageMinutes + ' min ago)';
+            cacheText.textContent = ADAMCA.i18n.cachedAnalysis.replace('%d', ageMinutes);
         } else {
             cacheDot.className = 'adamca-cache-dot fresh';
-            cacheText.textContent = 'Fresh analysis (just generated)';
+            cacheText.textContent = ADAMCA.i18n.freshAnalysis;
         }
     }
 

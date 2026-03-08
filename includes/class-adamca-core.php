@@ -162,6 +162,17 @@ class ADAMCA_Core {
             'apiEndpoint' => esc_url_raw( rest_url( 'adams-crypto/v1/analyze' ) ),
             'top10Coins'  => array_values( $top10_coins ),
             'pluginUrl'   => esc_url_raw( ADAMS_CRYPTO_ANALYSIS_URL ),
+            'i18n'        => array(
+                'loading'        => __( 'Loading...', 'adams-crypto-analysis' ),
+                'failedToLoad'   => __( 'Failed to load coins', 'adams-crypto-analysis' ),
+                'selectCoin'     => __( 'Select a coin...', 'adams-crypto-analysis' ),
+                'pleaseSelect'   => __( 'Please select or enter a coin ID.', 'adams-crypto-analysis' ),
+                'analysisFailed' => __( 'Analysis failed. Please try again.', 'adams-crypto-analysis' ),
+                'timedOut'       => __( 'Request timed out after 120 seconds. The AI provider may be overloaded. Please try again.', 'adams-crypto-analysis' ),
+                'networkError'   => __( 'Network error: ', 'adams-crypto-analysis' ),
+                'cachedAnalysis' => __( 'Cached analysis (%d min ago)', 'adams-crypto-analysis' ),
+                'freshAnalysis'  => __( 'Fresh analysis (just generated)', 'adams-crypto-analysis' ),
+            ),
         ) );
     }
 
@@ -212,6 +223,15 @@ class ADAMCA_Core {
             ), 429 );
         }
         set_transient( $rate_key, $rate_count + 1, 60 );
+
+        // Optional nonce verification: if X-WP-Nonce header is sent, validate it.
+        $nonce_header = $request->get_header( 'X-WP-Nonce' );
+        if ( null !== $nonce_header && ! wp_verify_nonce( $nonce_header, 'wp_rest' ) ) {
+            return new WP_REST_Response( array(
+                'success' => false,
+                'error'   => __( 'Invalid nonce.', 'adams-crypto-analysis' ),
+            ), 403 );
+        }
 
         $coin_id = isset( $request['coin_id'] ) ? sanitize_key( $request['coin_id'] ) : '';
 
