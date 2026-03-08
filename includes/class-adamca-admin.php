@@ -207,10 +207,18 @@ class ADAMCA_Admin {
 
             <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
-            <div class="adamca-how-to-use" style="background:#fff;border:1px solid #ccd0d4;border-left:4px solid #2271b1;padding:12px 16px;margin:16px 0;">
-                <h3 style="margin-top:0;"><?php esc_html_e( 'How to Use', 'adams-crypto-analysis' ); ?></h3>
+            <div class="adamca-how-to-use">
+                <h3><?php esc_html_e( 'How to Use', 'adams-crypto-analysis' ); ?></h3>
                 <p><?php esc_html_e( 'Use the following shortcode to display the crypto analysis tool on any post, page, or shortcode block:', 'adams-crypto-analysis' ); ?></p>
                 <p><code>[adamca_crypto_analysis]</code></p>
+                <h3><?php esc_html_e( 'Recommended AI Models', 'adams-crypto-analysis' ); ?></h3>
+                <ul>
+                    <li><strong><?php esc_html_e( 'Grok 4 Fast Non-Reasoning', 'adams-crypto-analysis' ); ?></strong> — <?php esc_html_e( 'Cheapest & fastest (recommended)', 'adams-crypto-analysis' ); ?></li>
+                    <li><strong><?php esc_html_e( 'Claude Sonnet 4.5', 'adams-crypto-analysis' ); ?></strong> — <?php esc_html_e( 'Balanced speed & accuracy', 'adams-crypto-analysis' ); ?></li>
+                    <li><strong><?php esc_html_e( 'Claude Opus 4.5', 'adams-crypto-analysis' ); ?></strong> — <?php esc_html_e( 'Most accurate, expensive (not recommended on free tier)', 'adams-crypto-analysis' ); ?></li>
+                    <li><strong><?php esc_html_e( 'GPT-5', 'adams-crypto-analysis' ); ?></strong> — <?php esc_html_e( 'Accurate but slow; increased caching times suggested', 'adams-crypto-analysis' ); ?></li>
+                    <li><strong><?php esc_html_e( 'GPT-4o', 'adams-crypto-analysis' ); ?></strong> — <?php esc_html_e( 'Legacy', 'adams-crypto-analysis' ); ?></li>
+                </ul>
             </div>
 
             <form method="post" action="options.php">
