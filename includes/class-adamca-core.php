@@ -170,6 +170,7 @@ class ADAMCA_Core {
                 'analysisFailed' => __( 'Analysis failed. Please try again.', 'adams-crypto-analysis' ),
                 'timedOut'       => __( 'Request timed out after 120 seconds. The AI provider may be overloaded. Please try again.', 'adams-crypto-analysis' ),
                 'networkError'   => __( 'Network error: ', 'adams-crypto-analysis' ),
+                /* translators: %d: number of minutes since the analysis was cached */
                 'cachedAnalysis' => __( 'Cached analysis (%d min ago)', 'adams-crypto-analysis' ),
                 'freshAnalysis'  => __( 'Fresh analysis (just generated)', 'adams-crypto-analysis' ),
             ),
