@@ -27,7 +27,10 @@ global $wpdb;
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 $adamca_meta_options = $wpdb->get_col(
-    "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'adamca_analysis_%'"
+    $wpdb->prepare(
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+        'adamca\_analysis\_%'
+    )
 );
 
 foreach ( $adamca_meta_options as $adamca_meta_option_name ) {
@@ -36,7 +39,11 @@ foreach ( $adamca_meta_options as $adamca_meta_option_name ) {
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 $adamca_transient_options = $wpdb->get_col(
-    "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_adamca_analysis_%' OR option_name LIKE '_transient_timeout_adamca_analysis_%'"
+    $wpdb->prepare(
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+        '\_transient\_adamca\_analysis\_%',
+        '\_transient\_timeout\_adamca\_analysis\_%'
+    )
 );
 
 foreach ( $adamca_transient_options as $adamca_transient_name ) {

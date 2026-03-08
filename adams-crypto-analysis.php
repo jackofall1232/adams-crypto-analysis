@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Adams Crypto Analysis
- * Plugin URI:  https://github.com/jackofall1232/adams-crypto-analysis
+ * Plugin URI:  https://askadamit.com
  * Description: AI-powered cryptocurrency technical analysis with BUY/SELL/HOLD signals via a shortcode.
  * Version:     1.0.0
  * Author:      Adams Crypto
@@ -18,9 +18,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'ADAMS_CRYPTO_ANALYSIS_VERSION', '1.0.0' );
-define( 'ADAMS_CRYPTO_ANALYSIS_PATH', plugin_dir_path( __FILE__ ) );
-define( 'ADAMS_CRYPTO_ANALYSIS_URL', plugin_dir_url( __FILE__ ) );
+if ( ! defined( 'ADAMS_CRYPTO_ANALYSIS_VERSION' ) ) {
+    define( 'ADAMS_CRYPTO_ANALYSIS_VERSION', '1.0.0' );
+}
+if ( ! defined( 'ADAMS_CRYPTO_ANALYSIS_PATH' ) ) {
+    define( 'ADAMS_CRYPTO_ANALYSIS_PATH', plugin_dir_path( __FILE__ ) );
+}
+if ( ! defined( 'ADAMS_CRYPTO_ANALYSIS_URL' ) ) {
+    define( 'ADAMS_CRYPTO_ANALYSIS_URL', plugin_dir_url( __FILE__ ) );
+}
 
 require_once ADAMS_CRYPTO_ANALYSIS_PATH . 'includes/class-adamca-cache.php';
 require_once ADAMS_CRYPTO_ANALYSIS_PATH . 'includes/class-adamca-coingecko.php';
@@ -28,11 +34,18 @@ require_once ADAMS_CRYPTO_ANALYSIS_PATH . 'includes/class-adamca-ai-client.php';
 require_once ADAMS_CRYPTO_ANALYSIS_PATH . 'includes/class-adamca-admin.php';
 require_once ADAMS_CRYPTO_ANALYSIS_PATH . 'includes/class-adamca-core.php';
 
-add_action( 'plugins_loaded', function () {
+/**
+ * Initialize the plugin on plugins_loaded.
+ */
+function adamca_init_plugin() {
     new ADAMCA_Core();
-} );
+}
+add_action( 'plugins_loaded', 'adamca_init_plugin' );
 
-register_activation_hook( __FILE__, function () {
+/**
+ * Set default option values on activation.
+ */
+function adamca_activate_plugin() {
     $defaults = array(
         'adamca_coingecko_api_key' => '',
         'adamca_ai_provider'       => 'openai',
@@ -58,4 +71,5 @@ register_activation_hook( __FILE__, function () {
             add_option( $option_name, $default_value );
         }
     }
-} );
+}
+register_activation_hook( __FILE__, 'adamca_activate_plugin' );

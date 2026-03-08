@@ -15,9 +15,42 @@ class ADAMCA_Admin {
     public static function register_hooks() {
         add_action( 'admin_menu', array( __CLASS__, 'add_settings_page' ) );
         add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
+        add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
         add_action( 'wp_ajax_adamca_test_coingecko', array( __CLASS__, 'ajax_test_coingecko' ) );
         add_action( 'wp_ajax_adamca_test_ai_provider', array( __CLASS__, 'ajax_test_ai_provider' ) );
         add_action( 'wp_ajax_adamca_clear_cache', array( __CLASS__, 'ajax_clear_cache' ) );
+    }
+
+    /**
+     * Enqueue admin CSS and JS only on the plugin settings page.
+     *
+     * @param string $hook_suffix The admin page hook suffix.
+     */
+    public static function enqueue_admin_assets( $hook_suffix ) {
+        if ( 'settings_page_adams-crypto-analysis' !== $hook_suffix ) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'adamca-admin',
+            ADAMS_CRYPTO_ANALYSIS_URL . 'assets/css/crypto-analysis-admin.css',
+            array(),
+            ADAMS_CRYPTO_ANALYSIS_VERSION
+        );
+
+        wp_enqueue_script(
+            'adamca-admin',
+            ADAMS_CRYPTO_ANALYSIS_URL . 'assets/js/crypto-analysis-admin.js',
+            array(),
+            ADAMS_CRYPTO_ANALYSIS_VERSION,
+            true
+        );
+
+        wp_localize_script( 'adamca-admin', 'adamcaAdmin', array(
+            'ajaxUrl'    => esc_url_raw( admin_url( 'admin-ajax.php' ) ),
+            'nonce'      => wp_create_nonce( 'adamca_admin_nonce' ),
+            'savedModel' => get_option( 'adamca_ai_model', '' ),
+        ) );
     }
 
     /**
@@ -160,191 +193,7 @@ class ADAMCA_Admin {
             return;
         }
 
-        $admin_nonce = wp_create_nonce( 'adamca_admin_nonce' );
         ?>
-        <style>
-            .adamca-admin-wrap {
-                max-width: 900px;
-                margin: 20px auto;
-                background: linear-gradient(135deg, #0a0f1f 0%, #111827 100%);
-                border-radius: 16px;
-                padding: 0 32px 32px;
-                color: #e2e8f0;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            }
-            .adamca-admin-wrap .adamca-banner {
-                width: calc(100% + 64px);
-                margin: 0 -32px 24px;
-                border-radius: 16px 16px 0 0;
-                display: block;
-                max-height: 280px;
-                object-fit: cover;
-            }
-            .adamca-admin-wrap h1 {
-                color: #f7931a;
-                font-size: 28px;
-                margin: 0 0 8px;
-                padding: 0;
-            }
-            .adamca-admin-wrap h2 {
-                color: #f7931a;
-                font-size: 20px;
-                border-bottom: 1px solid #2d3748;
-                padding-bottom: 10px;
-                margin-top: 32px;
-            }
-            .adamca-admin-wrap h3 {
-                color: #3861fb;
-                font-size: 16px;
-                margin-top: 24px;
-            }
-            .adamca-admin-wrap .form-table th {
-                color: #cbd5e1;
-                font-weight: 600;
-                padding: 16px 10px 16px 0;
-                vertical-align: top;
-            }
-            .adamca-admin-wrap .form-table td {
-                padding: 12px 10px;
-            }
-            .adamca-admin-wrap input[type="text"],
-            .adamca-admin-wrap input[type="password"],
-            .adamca-admin-wrap input[type="number"],
-            .adamca-admin-wrap select,
-            .adamca-admin-wrap textarea {
-                background: #1a1f2e;
-                border: 1px solid #2d3748;
-                color: #e2e8f0;
-                border-radius: 8px;
-                padding: 8px 12px;
-                font-size: 14px;
-                width: 100%;
-                max-width: 400px;
-                box-sizing: border-box;
-            }
-            .adamca-admin-wrap textarea {
-                max-width: 100%;
-            }
-            .adamca-admin-wrap input:focus,
-            .adamca-admin-wrap select:focus,
-            .adamca-admin-wrap textarea:focus {
-                border-color: #3861fb;
-                outline: none;
-                box-shadow: 0 0 0 2px rgba(56, 97, 251, 0.25);
-            }
-            .adamca-admin-wrap select option {
-                background: #1a1f2e;
-                color: #e2e8f0;
-            }
-            .adamca-admin-wrap .description {
-                color: #94a3b8;
-                font-size: 12px;
-                margin-top: 4px;
-            }
-            .adamca-admin-wrap .submit input[type="submit"],
-            .adamca-admin-wrap .adamca-btn {
-                background: linear-gradient(135deg, #f7931a 0%, #e2820e 100%);
-                color: #fff;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 24px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                transition: all 0.2s;
-            }
-            .adamca-admin-wrap .submit input[type="submit"]:hover,
-            .adamca-admin-wrap .adamca-btn:hover {
-                background: linear-gradient(135deg, #e2820e 0%, #d4760a 100%);
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
-            }
-            .adamca-admin-wrap .adamca-btn-secondary {
-                background: linear-gradient(135deg, #3861fb 0%, #2d4fd8 100%);
-            }
-            .adamca-admin-wrap .adamca-btn-secondary:hover {
-                background: linear-gradient(135deg, #2d4fd8 0%, #2444c0 100%);
-                box-shadow: 0 4px 12px rgba(56, 97, 251, 0.3);
-            }
-            .adamca-admin-wrap .adamca-btn-danger {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            }
-            .adamca-admin-wrap .adamca-btn-danger:hover {
-                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-            }
-            .adamca-admin-wrap .adamca-btn-sm {
-                padding: 5px 14px;
-                font-size: 12px;
-            }
-            .adamca-admin-wrap .adamca-actions {
-                display: flex;
-                gap: 12px;
-                align-items: center;
-                flex-wrap: wrap;
-                margin-top: 12px;
-            }
-            .adamca-admin-wrap .adamca-result-msg {
-                color: #34d399;
-                font-weight: 500;
-                font-size: 13px;
-                min-height: 20px;
-            }
-            .adamca-admin-wrap .adamca-divider {
-                border: none;
-                border-top: 1px solid #2d3748;
-                margin: 28px 0;
-            }
-            .adamca-admin-wrap .adamca-cache-table {
-                width: 100%;
-                border-collapse: separate;
-                border-spacing: 0;
-                border-radius: 10px;
-                overflow: hidden;
-                margin-top: 16px;
-                font-size: 13px;
-            }
-            .adamca-admin-wrap .adamca-cache-table thead th {
-                background: #1a1f2e;
-                color: #94a3b8;
-                font-weight: 600;
-                text-transform: uppercase;
-                font-size: 11px;
-                letter-spacing: 0.8px;
-                padding: 12px 14px;
-                text-align: left;
-                border-bottom: 2px solid #3861fb;
-            }
-            .adamca-admin-wrap .adamca-cache-table tbody td {
-                background: #0f1525;
-                padding: 10px 14px;
-                border-bottom: 1px solid #1e293b;
-                color: #e2e8f0;
-            }
-            .adamca-admin-wrap .adamca-cache-table tbody tr:hover td {
-                background: #1a1f2e;
-            }
-            .adamca-admin-wrap .adamca-cache-table .adamca-valid {
-                color: #34d399;
-                font-weight: bold;
-            }
-            .adamca-admin-wrap .adamca-cache-table .adamca-invalid {
-                color: #f87171;
-                font-weight: bold;
-            }
-            .adamca-admin-wrap .adamca-empty-state {
-                color: #64748b;
-                font-style: italic;
-                padding: 20px;
-                text-align: center;
-                background: #0f1525;
-                border-radius: 10px;
-                margin-top: 16px;
-            }
-        </style>
-
         <div class="adamca-admin-wrap">
             <img src="<?php echo esc_url( ADAMS_CRYPTO_ANALYSIS_URL . 'assets/images/adminbanner.png' ); ?>"
                  alt="<?php esc_attr_e( 'Adams Crypto Analysis', 'adams-crypto-analysis' ); ?>"
@@ -408,8 +257,7 @@ class ADAMCA_Admin {
                                 </td>
                                 <td>
                                     <button type="button" class="adamca-btn adamca-btn-danger adamca-btn-sm adamca-clear-single"
-                                            data-coin="<?php echo esc_attr( $status_entry['coin_id'] ); ?>"
-                                            data-nonce="<?php echo esc_attr( $admin_nonce ); ?>">
+                                            data-coin="<?php echo esc_attr( $status_entry['coin_id'] ); ?>">
                                         <?php esc_html_e( 'Clear', 'adams-crypto-analysis' ); ?>
                                     </button>
                                 </td>
@@ -422,92 +270,6 @@ class ADAMCA_Admin {
             <?php endif; ?>
         </div>
 
-        <script>
-        (function() {
-            /* --- Model dropdown sync with provider --- */
-            var modelsByProvider = {
-                openai:    ['gpt-5', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini'],
-                xai:       ['grok-4-fast-non-reasoning', 'grok-4', 'grok-3'],
-                anthropic: ['claude-opus-4-5', 'claude-sonnet-4-5']
-            };
-            var providerSelect = document.querySelector('select[name="adamca_ai_provider"]');
-            var modelSelect = document.getElementById('adamca-ai-model-select');
-            var savedModel = '<?php echo esc_js( get_option( 'adamca_ai_model', '' ) ); ?>';
-
-            function updateModelOptions() {
-                if (!providerSelect || !modelSelect) return;
-                var provider = providerSelect.value;
-                var models = modelsByProvider[provider] || [];
-                modelSelect.innerHTML = '';
-                var hasSelected = false;
-                models.forEach(function(m) {
-                    var opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m;
-                    if (m === savedModel) {
-                        opt.selected = true;
-                        hasSelected = true;
-                    }
-                    modelSelect.appendChild(opt);
-                });
-                if (!hasSelected && models.length > 0) {
-                    modelSelect.options[0].selected = true;
-                }
-            }
-            if (providerSelect) {
-                providerSelect.addEventListener('change', function() { savedModel = ''; updateModelOptions(); });
-            }
-            updateModelOptions();
-
-            /* --- AJAX helpers --- */
-            function adminAjax(action, extraData, resultElement) {
-                var formData = new FormData();
-                formData.append('action', action);
-                formData.append('nonce', '<?php echo esc_js( $admin_nonce ); ?>');
-                if (extraData) {
-                    Object.keys(extraData).forEach(function(dataKey) {
-                        formData.append(dataKey, extraData[dataKey]);
-                    });
-                }
-                resultElement.textContent = 'Working...';
-                fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                })
-                .then(function(fetchResponse) { return fetchResponse.json(); })
-                .then(function(responseData) {
-                    resultElement.textContent = responseData.success
-                        ? (responseData.data.message || 'Success!')
-                        : (responseData.data || 'Error occurred.');
-                })
-                .catch(function(fetchError) {
-                    resultElement.textContent = 'Request failed: ' + fetchError.message;
-                });
-            }
-
-            var testResult = document.getElementById('adamca-test-result');
-            var cacheResult = document.getElementById('adamca-cache-result');
-
-            document.getElementById('adamca-test-coingecko').addEventListener('click', function() {
-                adminAjax('adamca_test_coingecko', null, testResult);
-            });
-
-            document.getElementById('adamca-test-ai').addEventListener('click', function() {
-                adminAjax('adamca_test_ai_provider', null, testResult);
-            });
-
-            document.getElementById('adamca-clear-all-cache').addEventListener('click', function() {
-                adminAjax('adamca_clear_cache', { coin_id: 'all' }, cacheResult);
-            });
-
-            document.querySelectorAll('.adamca-clear-single').forEach(function(buttonElement) {
-                buttonElement.addEventListener('click', function() {
-                    adminAjax('adamca_clear_cache', { coin_id: this.dataset.coin }, cacheResult);
-                });
-            });
-        })();
-        </script>
         <?php
     }
 
@@ -713,7 +475,13 @@ class ADAMCA_Admin {
         if ( 200 === $status_code ) {
             wp_send_json_success( array( 'message' => __( 'CoinGecko connection successful!', 'adams-crypto-analysis' ) ) );
         } else {
-            wp_send_json_error( 'CoinGecko returned HTTP ' . $status_code );
+            wp_send_json_error(
+                sprintf(
+                    /* translators: %d: HTTP status code */
+                    __( 'CoinGecko returned HTTP %d.', 'adams-crypto-analysis' ),
+                    $status_code
+                )
+            );
         }
     }
 
@@ -836,8 +604,17 @@ class ADAMCA_Admin {
                 ),
             ) );
         } else {
-            $error_body = wp_remote_retrieve_body( $response );
-            wp_send_json_error( ucfirst( $provider ) . ' returned HTTP ' . $status_code . ': ' . $error_body );
+            $error_body  = wp_remote_retrieve_body( $response );
+            $safe_error  = sanitize_text_field( substr( $error_body, 0, 200 ) );
+            wp_send_json_error(
+                sprintf(
+                    /* translators: 1: AI provider name, 2: HTTP status code, 3: truncated error message */
+                    __( '%1$s returned HTTP %2$d: %3$s', 'adams-crypto-analysis' ),
+                    ucfirst( $provider ),
+                    $status_code,
+                    $safe_error
+                )
+            );
         }
     }
 
@@ -851,7 +628,7 @@ class ADAMCA_Admin {
             wp_send_json_error( __( 'Unauthorized.', 'adams-crypto-analysis' ) );
         }
 
-        $coin_id = isset( $_POST['coin_id'] ) ? sanitize_key( $_POST['coin_id'] ) : '';
+        $coin_id = isset( $_POST['coin_id'] ) ? sanitize_key( wp_unslash( $_POST['coin_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified above.
 
         if ( empty( $coin_id ) ) {
             wp_send_json_error( __( 'No coin ID provided.', 'adams-crypto-analysis' ) );
