@@ -1,0 +1,180 @@
+.adamca-admin-wrap {
+    max-width: 900px;
+    margin: 20px auto;
+    background: linear-gradient(135deg, #0a0f1f 0%, #111827 100%);
+    border-radius: 16px;
+    padding: 0 32px 32px;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.adamca-admin-wrap .adamca-banner {
+    width: calc(100% + 64px);
+    margin: 0 -32px 24px;
+    border-radius: 16px 16px 0 0;
+    display: block;
+    max-height: 280px;
+    object-fit: cover;
+}
+.adamca-admin-wrap h1 {
+    color: #f7931a;
+    font-size: 28px;
+    margin: 0 0 8px;
+    padding: 0;
+}
+.adamca-admin-wrap h2 {
+    color: #f7931a;
+    font-size: 20px;
+    border-bottom: 1px solid #2d3748;
+    padding-bottom: 10px;
+    margin-top: 32px;
+}
+.adamca-admin-wrap h3 {
+    color: #3861fb;
+    font-size: 16px;
+    margin-top: 24px;
+}
+.adamca-admin-wrap .form-table th {
+    color: #cbd5e1;
+    font-weight: 600;
+    padding: 16px 10px 16px 0;
+    vertical-align: top;
+}
+.adamca-admin-wrap .form-table td {
+    padding: 12px 10px;
+}
+.adamca-admin-wrap input[type="text"],
+.adamca-admin-wrap input[type="password"],
+.adamca-admin-wrap input[type="number"],
+.adamca-admin-wrap select,
+.adamca-admin-wrap textarea {
+    background: #1a1f2e;
+    border: 1px solid #2d3748;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+.adamca-admin-wrap textarea {
+    max-width: 100%;
+}
+.adamca-admin-wrap input:focus,
+.adamca-admin-wrap select:focus,
+.adamca-admin-wrap textarea:focus {
+    border-color: #3861fb;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(56, 97, 251, 0.25);
+}
+.adamca-admin-wrap select option {
+    background: #1a1f2e;
+    color: #e2e8f0;
+}
+.adamca-admin-wrap .description {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 4px;
+}
+.adamca-admin-wrap .submit input[type="submit"],
+.adamca-admin-wrap .adamca-btn {
+    background: linear-gradient(135deg, #f7931a 0%, #e2820e 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+}
+.adamca-admin-wrap .submit input[type="submit"]:hover,
+.adamca-admin-wrap .adamca-btn:hover {
+    background: linear-gradient(135deg, #e2820e 0%, #d4760a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+}
+.adamca-admin-wrap .adamca-btn-secondary {
+    background: linear-gradient(135deg, #3861fb 0%, #2d4fd8 100%);
+}
+.adamca-admin-wrap .adamca-btn-secondary:hover {
+    background: linear-gradient(135deg, #2d4fd8 0%, #2444c0 100%);
+    box-shadow: 0 4px 12px rgba(56, 97, 251, 0.3);
+}
+.adamca-admin-wrap .adamca-btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+.adamca-admin-wrap .adamca-btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+.adamca-admin-wrap .adamca-btn-sm {
+    padding: 5px 14px;
+    font-size: 12px;
+}
+.adamca-admin-wrap .adamca-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.adamca-admin-wrap .adamca-result-msg {
+    color: #34d399;
+    font-weight: 500;
+    font-size: 13px;
+    min-height: 20px;
+}
+.adamca-admin-wrap .adamca-divider {
+    border: none;
+    border-top: 1px solid #2d3748;
+    margin: 28px 0;
+}
+.adamca-admin-wrap .adamca-cache-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 16px;
+    font-size: 13px;
+}
+.adamca-admin-wrap .adamca-cache-table thead th {
+    background: #1a1f2e;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 2px solid #3861fb;
+}
+.adamca-admin-wrap .adamca-cache-table tbody td {
+    background: #0f1525;
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e293b;
+    color: #e2e8f0;
+}
+.adamca-admin-wrap .adamca-cache-table tbody tr:hover td {
+    background: #1a1f2e;
+}
+.adamca-admin-wrap .adamca-cache-table .adamca-valid {
+    color: #34d399;
+    font-weight: bold;
+}
+.adamca-admin-wrap .adamca-cache-table .adamca-invalid {
+    color: #f87171;
+    font-weight: bold;
+}
+.adamca-admin-wrap .adamca-empty-state {
+    color: #64748b;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+    background: #0f1525;
+    border-radius: 10px;
+    margin-top: 16px;
+}

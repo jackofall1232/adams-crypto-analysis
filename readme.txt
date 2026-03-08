@@ -15,7 +15,7 @@ AI-powered cryptocurrency technical analysis for WordPress with BUY / HOLD / SEL
 
 Adam's Crypto Analysis adds AI-powered cryptocurrency technical analysis to WordPress using a simple shortcode. The plugin fetches market data from CoinGecko and generates a professional technical analysis report including RSI, MACD, Bollinger Bands, support and resistance levels, market structure, and a clear BUY / HOLD / SELL recommendation.
 
-Simply add the `[crypto_analysis]` shortcode to any page or post and your visitors can analyze cryptocurrencies directly on your website.
+Simply add the `[adamca_crypto_analysis]` shortcode to any page or post and your visitors can analyze cryptocurrencies directly on your website.
 
 Visitors can:
 
@@ -52,6 +52,45 @@ The free version displays Ask Adam branding within the analysis output. A premiu
 
 This plugin generates AI-assisted technical analysis and trading signals for informational and educational purposes only. It should not be considered financial or investment advice. Always conduct your own research before making investment decisions.
 
+== External Services ==
+
+This plugin connects to the following third-party services:
+
+= CoinGecko API =
+
+The plugin fetches cryptocurrency market data (OHLC candles, price history, market listings, and trending coins) from the CoinGecko API. Requests are made both server-side (for analysis data) and client-side (for coin listings and trending data). User IP addresses are sent to CoinGecko during client-side requests.
+
+* Service URL: https://api.coingecko.com/api/v3/
+* Terms of Service: https://www.coingecko.com/en/terms
+* Privacy Policy: https://www.coingecko.com/en/privacy
+
+= AI Provider APIs =
+
+The plugin sends cryptocurrency market data to your configured AI provider to generate technical analysis reports. Data is sent server-side only. No user personal data is included in the requests.
+
+**OpenAI**
+* Service URL: https://api.openai.com/v1/
+* Terms of Use: https://openai.com/policies/terms-of-use
+* Privacy Policy: https://openai.com/policies/privacy-policy
+
+**xAI / Grok**
+* Service URL: https://api.x.ai/v1/
+* Terms of Service: https://x.ai/legal/terms-of-service
+* Privacy Policy: https://x.ai/legal/privacy-policy
+
+**Anthropic / Claude**
+* Service URL: https://api.anthropic.com/v1/
+* Terms of Service: https://www.anthropic.com/policies/terms
+* Privacy Policy: https://www.anthropic.com/policies/privacy
+
+= TradingView =
+
+The plugin loads an interactive chart widget from TradingView via an iframe. This third-party content may set cookies and track user interactions.
+
+* Service URL: https://s.tradingview.com/widgetembed/
+* Terms of Use: https://www.tradingview.com/policies/
+* Privacy Policy: https://www.tradingview.com/privacy-policy/
+
 == Installation ==
 
 1. Upload the `adams-crypto-analysis` folder to `/wp-content/plugins/`
@@ -59,11 +98,11 @@ This plugin generates AI-assisted technical analysis and trading signals for inf
 3. Go to **Settings → Adams Crypto Analysis**
 4. Enter your AI provider API key and select your preferred model
 5. (Optional) Enter a CoinGecko Pro API key for higher rate limits
-6. Add the shortcode `[crypto_analysis]` to any page or post
+6. Add the shortcode `[adamca_crypto_analysis]` to any page or post
 
 Example shortcode:
 
-[crypto_analysis]
+[adamca_crypto_analysis]
 
 This will render the interactive cryptocurrency analysis interface where visitors can select a coin and generate a technical analysis report.
 

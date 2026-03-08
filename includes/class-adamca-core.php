@@ -28,10 +28,10 @@ class ADAMCA_Core {
     }
 
     /**
-     * Register the [crypto_analysis] shortcode.
+     * Register the [adamca_crypto_analysis] shortcode.
      */
     public function register_shortcode() {
-        add_shortcode( 'crypto_analysis', array( $this, 'render_shortcode' ) );
+        add_shortcode( 'adamca_crypto_analysis', array( $this, 'render_shortcode' ) );
     }
 
     /**
@@ -46,7 +46,7 @@ class ADAMCA_Core {
         $parsed_atts = shortcode_atts( array(
             'title'    => __( 'Crypto Analysis', 'adams-crypto-analysis' ),
             'subtitle' => __( 'AI-Powered Technical Analysis', 'adams-crypto-analysis' ),
-        ), $attributes, 'crypto_analysis' );
+        ), $attributes, 'adamca_crypto_analysis' );
 
         $title_text    = esc_html( $parsed_atts['title'] );
         $subtitle_text = esc_html( $parsed_atts['subtitle'] );
@@ -93,7 +93,7 @@ class ADAMCA_Core {
 
         $output_html .= '<div id="adamca-loading" class="adamca-loading-spinner" style="display:none;">';
         $output_html .= '<div class="adamca-spinner"></div>';
-        $output_html .= '<p>' . esc_html__( 'Generating analysis&hellip; this may take up to 2 minutes depending on server load.', 'adams-crypto-analysis' ) . '</p>';
+        $output_html .= '<p>' . esc_html__( 'Generating analysis… this may take up to 2 minutes depending on server load.', 'adams-crypto-analysis' ) . '</p>';
         $output_html .= '</div>';
 
         $output_html .= '<div id="adamca-cache-info" class="adamca-cache-indicator" style="display:none;">';
@@ -123,7 +123,7 @@ class ADAMCA_Core {
     public function maybe_enqueue_assets() {
         global $post;
 
-        if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'crypto_analysis' ) ) {
+        if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'adamca_crypto_analysis' ) ) {
             $this->enqueue_frontend_assets();
         }
     }
@@ -201,6 +201,18 @@ class ADAMCA_Core {
      * @return WP_REST_Response|WP_Error Response or error.
      */
     public function handle_analyze_request( $request ) {
+        // Rate limit: max 5 requests per IP per minute to prevent API abuse.
+        $client_ip   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+        $rate_key    = 'adamca_rate_' . substr( md5( $client_ip ), 0, 12 );
+        $rate_count  = (int) get_transient( $rate_key );
+        if ( $rate_count >= 5 ) {
+            return new WP_REST_Response( array(
+                'success' => false,
+                'error'   => __( 'Rate limit exceeded. Please try again shortly.', 'adams-crypto-analysis' ),
+            ), 429 );
+        }
+        set_transient( $rate_key, $rate_count + 1, 60 );
+
         $coin_id = isset( $request['coin_id'] ) ? sanitize_key( $request['coin_id'] ) : '';
 
         if ( ! preg_match( '/^[a-z0-9\-]{1,100}$/', $coin_id ) ) {
@@ -218,7 +230,7 @@ class ADAMCA_Core {
 
             return new WP_REST_Response( array(
                 'success'           => true,
-                'html'              => $cached_html,
+                'html'              => wp_kses_post( $cached_html ),
                 'cached'            => true,
                 'cache_age_minutes' => $age_minutes,
                 'is_top_ten'        => ADAMCA_Cache::is_top_ten( $coin_id ),
@@ -245,6 +257,9 @@ class ADAMCA_Core {
                 'error'   => $html_output->get_error_message(),
             ), 500 );
         }
+
+        // Sanitize AI-generated HTML before caching and output.
+        $html_output = wp_kses_post( $html_output );
 
         // Store in cache.
         ADAMCA_Cache::store_analysis( $coin_id, $html_output );

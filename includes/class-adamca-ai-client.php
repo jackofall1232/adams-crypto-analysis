@@ -216,8 +216,7 @@ class ADAMCA_AI_Client {
                 array( 'role' => 'user',   'content' => $prompt_text ),
             ),
             'max_tokens'  => 8096,
-            
-                ) );
+        ) );
 
         $response = wp_remote_post( $request_url, array(
             'timeout' => 140,
@@ -234,8 +233,14 @@ class ADAMCA_AI_Client {
 
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
-            $error_detail = wp_remote_retrieve_body( $response );
-            return new WP_Error( 'adamca_openai_error', 'OpenAI returned HTTP ' . $status_code );
+            return new WP_Error(
+                'adamca_openai_error',
+                sprintf(
+                    /* translators: %d: HTTP status code */
+                    __( 'OpenAI returned HTTP %d.', 'adams-crypto-analysis' ),
+                    $status_code
+                )
+            );
         }
 
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -313,8 +318,14 @@ class ADAMCA_AI_Client {
         ) );
 
         if ( 200 !== $status_code ) {
-            $error_detail = $raw_body;
-            return new WP_Error( 'adamca_openai_error', 'OpenAI returned HTTP ' . $status_code );
+            return new WP_Error(
+                'adamca_openai_error',
+                sprintf(
+                    /* translators: %d: HTTP status code */
+                    __( 'OpenAI returned HTTP %d.', 'adams-crypto-analysis' ),
+                    $status_code
+                )
+            );
         }
 
         $response_body = json_decode( $raw_body, true );
@@ -492,6 +503,8 @@ class ADAMCA_AI_Client {
             return;
         }
 
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        error_log( 'ADAMCA OpenAI Debug [' . $label . ']: ' . wp_json_encode( $context ) );
     }
 
     /**
@@ -533,8 +546,14 @@ class ADAMCA_AI_Client {
 
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
-            $error_detail = wp_remote_retrieve_body( $response );
-            return new WP_Error( 'adamca_xai_error', 'xAI returned HTTP ' . $status_code );
+            return new WP_Error(
+                'adamca_xai_error',
+                sprintf(
+                    /* translators: %d: HTTP status code */
+                    __( 'xAI returned HTTP %d.', 'adams-crypto-analysis' ),
+                    $status_code
+                )
+            );
         }
 
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -581,8 +600,14 @@ class ADAMCA_AI_Client {
 
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
-            $error_detail = wp_remote_retrieve_body( $response );
-            return new WP_Error( 'adamca_anthropic_error', 'Anthropic returned HTTP ' . $status_code );
+            return new WP_Error(
+                'adamca_anthropic_error',
+                sprintf(
+                    /* translators: %d: HTTP status code */
+                    __( 'Anthropic returned HTTP %d.', 'adams-crypto-analysis' ),
+                    $status_code
+                )
+            );
         }
 
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
