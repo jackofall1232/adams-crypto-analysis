@@ -47,7 +47,7 @@
                 formData.append(dataKey, extraData[dataKey]);
             });
         }
-        resultElement.textContent = 'Working...';
+        resultElement.textContent = adamcaAdmin.i18n.working;
         fetch(adamcaAdmin.ajaxUrl, {
             method: 'POST',
             body: formData,
@@ -56,11 +56,11 @@
         .then(function(fetchResponse) { return fetchResponse.json(); })
         .then(function(responseData) {
             resultElement.textContent = responseData.success
-                ? (responseData.data.message || 'Success!')
-                : (responseData.data || 'Error occurred.');
+                ? (responseData.data.message || adamcaAdmin.i18n.success)
+                : (responseData.data || adamcaAdmin.i18n.errorOccurred);
         })
         .catch(function(fetchError) {
-            resultElement.textContent = 'Request failed: ' + fetchError.message;
+            resultElement.textContent = adamcaAdmin.i18n.requestFailed + fetchError.message;
         });
     }
 
