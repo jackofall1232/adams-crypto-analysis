@@ -80,8 +80,8 @@ The plugin sends cryptocurrency market data to your configured AI provider to ge
 
 **Anthropic / Claude**
 * Service URL: https://api.anthropic.com/v1/
-* Terms of Service: https://www.anthropic.com/policies/terms
-* Privacy Policy: https://www.anthropic.com/policies/privacy
+* Terms of Service: https://www.anthropic.com/legal/terms
+* Privacy Policy: https://www.anthropic.com/legal/privacy
 
 = TradingView =
 
