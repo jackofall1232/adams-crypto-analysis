@@ -3,7 +3,7 @@
  * Plugin Name: Adams Crypto Analysis
  * Plugin URI:  https://askadamit.com
  * Description: AI-powered cryptocurrency technical analysis with BUY/SELL/HOLD signals via a shortcode.
- * Version:     1.0.0
+ * Version:     1.0.1
  * Author:      Adams Crypto
  * Author URI:  https://github.com/jackofall1232
  * License:     GPLv2 or later
@@ -19,7 +19,7 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'ADAMS_CRYPTO_ANALYSIS_VERSION' ) ) {
-    define( 'ADAMS_CRYPTO_ANALYSIS_VERSION', '1.0.0' );
+    define( 'ADAMS_CRYPTO_ANALYSIS_VERSION', '1.0.1' );
 }
 if ( ! defined( 'ADAMS_CRYPTO_ANALYSIS_PATH' ) ) {
     define( 'ADAMS_CRYPTO_ANALYSIS_PATH', plugin_dir_path( __FILE__ ) );
