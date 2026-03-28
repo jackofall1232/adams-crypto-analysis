@@ -19,7 +19,7 @@ jobs:
       - name: Verify plugin version matches tag
         run: |
           TAG="${GITHUB_REF_NAME}"
-          FILE="ask-adam-lite.php"
+          FILE="adams-crypto-analysis.php"
           if [ ! -f "$FILE" ]; then
             echo "Main plugin file not found at $FILE"; exit 1
           fi
@@ -32,7 +32,7 @@ jobs:
       - name: Deploy to WordPress.org
         uses: 10up/action-wordpress-plugin-deploy@stable
         with:
-          slug: ask-adam-lite
+          slug: adams-crypto-analysis
           assets-dir: .wordpress-org
         env:
           SVN_USERNAME: ${{ secrets.WPORG_USERNAME }}
